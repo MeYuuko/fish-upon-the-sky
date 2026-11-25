@@ -4,8 +4,8 @@
 
 insert into public.member_accounts (member_id, email, clerk_user_id) values
   ('bao', 'chmyc04@gmail.com', null),
-  ('hang', 'hang@gmail.com', null),
-  ('diem', 'diem@gmail.com', null),
+  ('hang', 'hangngoc1342004@gmail.com', null),
+  ('diem', 'diemngoc1342004@gmail.com', null),
   ('quynh', 'quynhlenguyentruc2004@gmail.com', null),
   ('quoc-anh', 'qanh3007@gmail.com', null),
   ('thu', 'anhthunguyenle25@gmail.com', null),
