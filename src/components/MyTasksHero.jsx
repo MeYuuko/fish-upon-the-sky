@@ -1987,8 +1987,8 @@ export default function MyTasksHero({ memberName, polls, outings, members, onNew
         icon: 'link',
         tags: ['Shared Sheet', 'West Lake'],
         detail: 'Attach the group expense sheet link so everyone can check splits.',
-        target: 'money',
-        actionLabel: 'Open Money list',
+        target: 'vault',
+        actionLabel: 'Open Trip Vault',
       });
     }
     list.push({

@@ -1,9 +1,26 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ClerkAuthRoot, { SessionExitButton } from './auth/ClerkAuthRoot.jsx';
-import { clerkPublishableKey } from './auth/auth-config.js';
+import { clerkPublishableKey, googleClientId, hasGoogleOAuth } from './auth/auth-config.js';
+import {
+  GOOGLE_CALENDAR_SCOPE,
+  buildGoogleCalendarEventUrl,
+  clearGmailSession,
+  createGoogleCalendarEvent,
+  downloadGroupIcsFile,
+  fetchGoogleCalendarEvents,
+  loadGmailSession,
+  requestGoogleOAuthToken,
+  revokeGoogleToken,
+  saveGmailSession,
+} from './auth/google-auth.js';
 import WelcomeReveal from './components/GlassLogoReveal.jsx';
 import MyTasksHero from './components/MyTasksHero.jsx';
+import TripVaultView from './components/TripVaultView.jsx';
+import BeamWordmarkFooter from './components/BeamWordmarkFooter.jsx';
+import LiquidGlassTabBar from './components/LiquidGlassTabBar.jsx';
+import FishesView from './components/FishesView.jsx';
+import { loadMemberProfiles, saveMemberProfiles } from './data/fishProfiles.js';
 import logo from '../Logo/Logo.svg';
 
 const people = [
@@ -37,17 +54,80 @@ const initialPolls = [
 ];
 
 const initialOutings = [
-  { id: 'river-picnic', title: 'Riverside picnic', date: 'Sat, Nov 14', place: 'West Lake', status: 'Done', sheetUrl: '' },
-  { id: 'market-stroll', title: 'Market stroll & tea', date: 'Vote closes Nov 27', place: 'Choosing together', status: 'Planning', sheetUrl: '' },
-  { id: 'winter-day', title: 'A little winter day out', date: 'Date to be decided', place: 'Open for ideas', status: 'Idea', sheetUrl: '' },
+  {
+    id: 'river-picnic',
+    title: 'Riverside picnic',
+    date: 'Sat, Nov 14',
+    place: 'West Lake',
+    status: 'Done',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [
+      { id: 'rp-ph-1', caption: 'Golden hour by West Lake', addedBy: 'Hằng', art: 'waterfall' },
+    ],
+    places: [
+      { id: 'rp-pl-1', name: 'West Lake Lotus Lawn', category: 'Spot', mapUrl: 'https://maps.google.com/?q=West+Lake+Hanoi', addedBy: 'Bảo' },
+    ],
+    notes: [
+      { id: 'rp-nt-1', text: 'Next time bring two picnic blankets and extra cold brew.', author: 'Bảo', createdAt: 'Nov 14' },
+    ],
+  },
+  {
+    id: 'market-stroll',
+    title: 'Market stroll & tea',
+    date: 'Vote closes Nov 27',
+    place: 'Choosing together',
+    status: 'Planning',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [],
+    places: [
+      { id: 'ms-pl-1', name: 'Old Quarter Tea Room', category: 'Food', mapUrl: '', addedBy: 'Diễm' },
+    ],
+    notes: [],
+  },
+  {
+    id: 'winter-day',
+    title: 'A little winter day out',
+    date: 'Date to be decided',
+    place: 'Open for ideas',
+    status: 'Idea',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [],
+    places: [],
+    notes: [
+      { id: 'wd-nt-1', text: 'Hotpot somewhere cozy if it drops below 18°C.', author: 'Quỳnh', createdAt: 'Idea' },
+    ],
+  },
+  {
+    id: 'autumn-da-lat',
+    title: 'Autumn Da Lat escape',
+    date: 'Oct 18–20',
+    place: 'Da Lat',
+    status: 'Done',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [
+      { id: 'dl-ph-1', caption: 'Pine hill sunrise', addedBy: 'Thư', art: 'citrus' },
+      { id: 'dl-ph-2', caption: 'Night market soy milk stop', addedBy: 'Quốc Anh', art: 'cobalt' },
+    ],
+    places: [
+      { id: 'dl-pl-1', name: 'Thien Phuc Duc Hill', category: 'Spot', mapUrl: 'https://maps.google.com/?q=Thien+Phuc+Duc+Da+Lat', addedBy: 'Thiên' },
+      { id: 'dl-pl-2', name: 'Tui Mo To Coffee', category: 'Food', mapUrl: '', addedBy: 'Hằng' },
+    ],
+    notes: [
+      { id: 'dl-nt-1', text: '4:45 AM alarm was worth it — whole valley under mist.', author: 'Thư', createdAt: 'Oct 20' },
+    ],
+  },
 ];
 
 const navItems = [
   { id: 'home', label: 'My tasks', icon: 'home' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'outings', label: 'Outings', icon: 'spark' },
-  { id: 'money', label: 'Money', icon: 'wallet' },
-  { id: 'members', label: 'Members', icon: 'people' },
+  { id: 'vault', label: 'Vault', icon: 'folder' },
+  { id: 'members', label: 'Fishes', icon: 'people' },
 ];
 
 function Icon({ name, size = 20, strokeWidth = 1.8 }) {
@@ -56,6 +136,7 @@ function Icon({ name, size = 20, strokeWidth = 1.8 }) {
     home: <><path d="m3.5 10 8.5-7 8.5 7" /><path d="M5.5 9v10h13V9M9 19v-6h6v6" /></>,
     calendar: <><rect x="3.5" y="5" width="17" height="16" rx="3" /><path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" /><path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
     spark: <><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" /><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z" /></>,
+    folder: <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2.5h7A2.5 2.5 0 0 1 21 9v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5V6.5Z" />,
     wallet: <><rect x="3" y="5" width="18" height="15" rx="3" /><path d="M3.5 9h17M16 14h.01M6 5V3.5h11" /></>,
     people: <><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 4.8" /></>,
     arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
@@ -71,41 +152,6 @@ function Icon({ name, size = 20, strokeWidth = 1.8 }) {
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></>,
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" {...common}>{paths[name]}</svg>;
-}
-
-function SlidingPillTabs({ items, activeId, onChange, layoutId, ariaLabel, className = '' }) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <div className={`pill-switch${className ? ' ' + className : ''}`} role="tablist" aria-label={ariaLabel}>
-      {items.map((item) => {
-        const active = item.id === activeId;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            className={`pill-switch-button${active ? ' is-active' : ''}`}
-            onClick={() => onChange(item.id)}
-          >
-            {active && (
-              <motion.span
-                layoutId={layoutId}
-                className="pill-switch-bg"
-                transition={reduceMotion ? { duration: 0.01 } : { type: 'spring', stiffness: 360, damping: 32 }}
-                aria-hidden="true"
-              />
-            )}
-            <span className="pill-switch-label">{item.label}</span>
-            {item.count !== undefined && (
-              <sup className="pill-switch-count">{String(item.count).padStart(2, '0')}</sup>
-            )}
-            {item.notice && <i className="pill-notice" aria-hidden="true" />}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 function HudCross({ className = '' }) {
@@ -265,8 +311,29 @@ function HomeView({ polls, outings, members, onNewPoll, onVote, currentMemberId,
   );
 }
 
-function CalendarView({ onNewPoll, currentMemberId, onChangeDemoMember, busyDays, setBusyDays }) {
+function CalendarView({
+  onNewPoll,
+  currentMemberId,
+  currentMemberName,
+  currentUserEmail,
+  googleAccessToken,
+  onUpdateGoogleToken,
+  onClearGoogleToken,
+  onChangeDemoMember,
+  busyDays,
+  setBusyDays,
+  polls,
+}) {
   const [monthOffset, setMonthOffset] = useState(0);
+  const [gcalEvents, setGcalEvents] = useState([]);
+  const [gcalConnecting, setGcalConnecting] = useState(false);
+  const [gcalSyncing, setGcalSyncing] = useState(false);
+  const [pushingKey, setPushingKey] = useState('');
+  const [gcalStatus, setGcalStatus] = useState('');
+  const [gcalError, setGcalError] = useState('');
+  const [syncedEventIds, setSyncedEventIds] = useState({});
+  const [showOauthNote, setShowOauthNote] = useState(false);
+
   const start = new Date(2026, 10 + monthOffset, 1);
   const year = start.getFullYear();
   const month = start.getMonth();
@@ -280,8 +347,149 @@ function CalendarView({ onNewPoll, currentMemberId, onChangeDemoMember, busyDays
     return { ...old, [currentMemberId]: next };
   });
   const title = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const eventsByDay = gcalEvents.reduce((acc, ev) => {
+    if (!ev.dateKey.startsWith(monthPrefix)) return acc;
+    if (!acc[ev.dateKey]) acc[ev.dateKey] = [];
+    acc[ev.dateKey].push(ev);
+    return acc;
+  }, {});
+
+  const handleRevokedOrError = (err, fallback) => {
+    if (err?.code === 'auth_revoked') {
+      setGcalEvents([]);
+      onClearGoogleToken?.();
+      setGcalStatus('');
+      setGcalError(err.message || 'Google Calendar access expired or was revoked. Please reconnect.');
+      return;
+    }
+    setGcalError(err?.message || fallback);
+  };
+
+  const loadMonthFromGoogle = async (tokenToUse = googleAccessToken) => {
+    if (!tokenToUse) return;
+    setGcalSyncing(true);
+    setGcalError('');
+    try {
+      const timeMin = new Date(year, month, 1).toISOString();
+      const timeMax = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+      const events = await fetchGoogleCalendarEvents(tokenToUse, timeMin, timeMax);
+      setGcalEvents(events);
+      setGcalStatus(`Synced ${events.length} Google Calendar ${events.length === 1 ? 'event' : 'events'} for ${title}.`);
+    } catch (err) {
+      handleRevokedOrError(err, 'Could not sync Google Calendar events.');
+    } finally {
+      setGcalSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (googleAccessToken) {
+      loadMonthFromGoogle(googleAccessToken);
+    }
+  }, [googleAccessToken, monthOffset]);
+
+  const handleConnectGoogleCalendar = async () => {
+    setGcalError('');
+    setGcalStatus('');
+    if (!hasGoogleOAuth) {
+      setShowOauthNote((prev) => !prev);
+      return;
+    }
+    setGcalConnecting(true);
+    try {
+      const token = await requestGoogleOAuthToken({
+        clientId: googleClientId,
+        scope: GOOGLE_CALENDAR_SCOPE,
+        prompt: 'consent',
+        includeGrantedScopes: true,
+      });
+      if (!token.grantedAllScopes) {
+        setGcalError('Google Calendar permission was not granted. Please allow calendar access to enable 2-way sync.');
+        return;
+      }
+      onUpdateGoogleToken?.(token);
+      setShowOauthNote(false);
+    } catch (err) {
+      if (err?.code === 'cancelled') {
+        setGcalStatus('Google Calendar connection was cancelled.');
+      } else {
+        setGcalError(err?.message || 'Could not connect Google Calendar.');
+      }
+    } finally {
+      setGcalConnecting(false);
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = () => {
+    revokeGoogleToken(googleAccessToken);
+    setGcalEvents([]);
+    setGcalError('');
+    setGcalStatus('Disconnected Google Calendar for this session.');
+    onClearGoogleToken?.();
+  };
+
+  const handleApplyBusyDays = () => {
+    const monthEventKeys = Object.keys(eventsByDay);
+    if (monthEventKeys.length === 0) {
+      setGcalStatus('No busy events found in your Google Calendar for this month.');
+      return;
+    }
+    setBusyDays((old) => {
+      const current = old[currentMemberId] ?? [];
+      const merged = Array.from(new Set([...current, ...monthEventKeys]));
+      return { ...old, [currentMemberId]: merged };
+    });
+    setGcalStatus(`Marked ${monthEventKeys.length} day(s) busy from Google Calendar.`);
+  };
+
+  const upcomingOptions = polls.flatMap((poll) =>
+    (poll.options || []).slice(0, 2).map((opt) => ({
+      key: `${poll.id}-${opt.id}`,
+      title: poll.title,
+      dateKey: opt.id,
+      label: opt.label,
+      location: poll.placeOptions?.[0] || 'Fish Upon The Sky outing',
+      details: poll.detail || 'Group outing planned on Fish Upon The Sky',
+    })),
+  ).slice(0, 3);
+
+  const handlePushOuting = async (item) => {
+    if (!googleAccessToken) {
+      window.open(
+        buildGoogleCalendarEventUrl({
+          title: item.title,
+          dateKey: item.dateKey,
+          location: item.location,
+          details: item.details,
+        }),
+        '_blank',
+        'noopener,noreferrer',
+      );
+      return;
+    }
+    setPushingKey(item.key);
+    setGcalError('');
+    try {
+      await createGoogleCalendarEvent(googleAccessToken, {
+        title: item.title,
+        dateKey: item.dateKey,
+        location: item.location,
+        description: item.details,
+      });
+      setSyncedEventIds((prev) => ({ ...prev, [item.key]: true }));
+      setGcalStatus(`Added "${item.title}" to your Google Calendar.`);
+      loadMonthFromGoogle(googleAccessToken);
+    } catch (err) {
+      handleRevokedOrError(err, 'Could not push event to Google Calendar.');
+    } finally {
+      setPushingKey('');
+    }
+  };
+
   return <section className="page-section calendar-page">
-    <div className="page-title-row"><div><span className="eyebrow">All seven schedules, one view</span><h1>Find a day that fits.</h1><p>Tap a date to mark yourself busy. The group can build a plan around everyone’s free time.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> Open a new vote</button></div>
+    <div className="page-title-row"><div><span className="eyebrow">All seven schedules, one view</span><h1>Find a day that fits.</h1><p>Tap a date to mark yourself busy, or connect Google Calendar to sync automatically.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> Open a new vote</button></div>
     <div className="calendar-layout">
       <section className="calendar-card">
         <div className="calendar-toolbar"><button className="icon-button" aria-label="Previous month" onClick={() => setMonthOffset((value) => value - 1)}>‹</button><h2>{title}</h2><button className="icon-button" aria-label="Next month" onClick={() => setMonthOffset((value) => value + 1)}>›</button></div>
@@ -291,13 +499,111 @@ function CalendarView({ onNewPoll, currentMemberId, onChangeDemoMember, busyDays
           const dayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const isBusy = todayBusy.includes(dayKey);
           const hasIdea = [5, 6, 12, 19].includes(day) && month === 11;
-          return <button key={dayKey} className={`calendar-day${isBusy ? ' is-busy' : ''}${hasIdea ? ' has-idea' : ''}`} aria-label={`${title} ${day}${isBusy ? ', marked busy' : ''}`} aria-pressed={isBusy} onClick={() => toggleBusy(dayKey)}><span>{day}</span>{hasIdea && <i />}</button>;
+          const dayGcal = eventsByDay[dayKey] ?? [];
+          const hasGcal = dayGcal.length > 0;
+          return (
+            <button
+              key={dayKey}
+              className={`calendar-day${isBusy ? ' is-busy' : ''}${hasIdea ? ' has-idea' : ''}${hasGcal ? ' has-gcal' : ''}`}
+              aria-label={`${title} ${day}${isBusy ? ', marked busy' : ''}${hasGcal ? `, ${dayGcal.length} Google Calendar event` : ''}`}
+              title={hasGcal ? dayGcal.map((e) => `${e.startTime}: ${e.title}`).join('\n') : undefined}
+              aria-pressed={isBusy}
+              onClick={() => toggleBusy(dayKey)}
+            >
+              <span>{day}</span>
+              {hasGcal && <b className="gcal-day-dot" aria-hidden="true" />}
+              {hasIdea && <i />}
+            </button>
+          );
         })}</div>
-        <div className="calendar-legend"><span><i className="legend-busy" /> Your busy day</span><span><i className="legend-idea" /> Possible outing date</span><span>Tap a date to update yours</span></div>
+        <div className="calendar-legend">
+          <span><i className="legend-busy" /> Your busy day</span>
+          <span><i className="legend-idea" /> Possible outing date</span>
+          <span><i className="legend-gcal" /> Google Calendar</span>
+        </div>
       </section>
-      <aside className="availability-card"><span className="eyebrow">A quick check-in</span><h2>Mark the days you can’t make.</h2>
-        <p>Your availability changes stay in this browser session.</p>
+      <aside className="availability-card">
+        <span className="eyebrow">A quick check-in</span>
+        <h2>Mark the days you can’t make.</h2>
+        <p>Your availability stays linked to <strong>{currentMemberName}</strong>{currentUserEmail ? ` (${currentUserEmail})` : ''}.</p>
         {onChangeDemoMember && <><label className="field-label" htmlFor="member-switch">Editing as</label><MemberSelect id="member-switch" currentMemberId={currentMemberId} onChange={onChangeDemoMember} /></>}
+
+        <div className="gcal-panel">
+          <div className="gcal-panel-head">
+            <span className={`gcal-status-dot${googleAccessToken ? ' is-connected' : ''}`} aria-hidden="true" />
+            <div>
+              <strong>Google Calendar Sync</strong>
+              <span>{googleAccessToken ? `Connected · ${currentUserEmail || 'Live 2-way API'}` : 'Ready to link & export'}</span>
+            </div>
+            {googleAccessToken && (
+              <button
+                type="button"
+                className="quiet-button gcal-disconnect-btn"
+                onClick={handleDisconnectGoogleCalendar}
+              >
+                Disconnect
+              </button>
+            )}
+          </div>
+
+          <div className="gcal-actions">
+            {googleAccessToken ? (
+              <>
+                <button type="button" className="button button-primary gcal-btn" disabled={gcalSyncing} onClick={handleApplyBusyDays}>
+                  {gcalSyncing ? 'Syncing…' : 'Sync busy days from Google'}
+                </button>
+                <button type="button" className="button button-secondary gcal-btn" disabled={gcalSyncing} onClick={() => loadMonthFromGoogle()}>
+                  Refresh {title.split(' ')[0]} events
+                </button>
+              </>
+            ) : (
+              <button type="button" className="button button-secondary gcal-btn" disabled={gcalConnecting} onClick={handleConnectGoogleCalendar}>
+                {hasGoogleOAuth ? (gcalConnecting ? 'Connecting…' : 'Connect Google Calendar (2-way)') : 'Enable 2-way OAuth sync'}
+              </button>
+            )}
+            <button
+              type="button"
+              className="button button-secondary gcal-btn"
+              onClick={() => downloadGroupIcsFile({ polls, busyDaysList: todayBusy, memberName: currentMemberName })}
+            >
+              Export .ics for Google Calendar
+            </button>
+          </div>
+
+          {showOauthNote && !hasGoogleOAuth && (
+            <p className="gcal-note">
+              Add <code>VITE_GOOGLE_CLIENT_ID</code> in <code>.env</code> for automatic 2-way Calendar read/write. Quick add &amp; <code>.ics</code> export work right now below.
+            </p>
+          )}
+          {gcalStatus && <p className="gcal-feedback" role="status">{gcalStatus}</p>}
+          {gcalError && <p className="gcal-error" role="alert">{gcalError}</p>}
+
+          {upcomingOptions.length > 0 && (
+            <div className="gcal-outing-pushes">
+              <span className="gcal-sub-label">Add group outings to Google Calendar</span>
+              {upcomingOptions.map((item) => {
+                const isPushing = pushingKey === item.key;
+                return (
+                  <div className="gcal-push-row" key={item.key}>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <span>{item.label}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="quiet-button gcal-push-btn"
+                      disabled={isPushing}
+                      onClick={() => handlePushOuting(item)}
+                    >
+                      {isPushing ? 'Adding…' : syncedEventIds[item.key] ? 'Synced ✓' : googleAccessToken ? 'Push →' : 'Add →'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="availability-tip"><Icon name="spark" /><span>The best date is the one with room for everyone.</span></div>
       </aside>
     </div>
@@ -315,94 +621,67 @@ function OutingsView({ polls, outings, onNewPoll, currentMemberId, onVote, goTo,
     <div className="page-title-row"><div><span className="eyebrow">Ideas turn into good days</span><h1>Outings & plans.</h1><p>From the first idea to the little checklist that gets everyone out the door.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> New outing poll</button></div>
     {polls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{polls.map((poll) => <VoteCard key={poll.id} poll={poll} currentMemberId={currentMemberId} onToggleVote={onVote} />)}</div></div>}
     <SectionHeading kicker="The group’s story" title="Every plan has a place" />
-    <div className="outing-list">{outings.map((outing) => <article className="outing-row" key={outing.id}><span className={`outing-marker marker-${outing.status.toLowerCase()}`}><Icon name={outing.status === 'Done' ? 'check' : 'spark'} size={18} /></span><div className="outing-main"><div className="outing-title-line"><h3>{outing.title}</h3><label className="sr-only" htmlFor={`status-${outing.id}`}>Update status for {outing.title}</label><select id={`status-${outing.id}`} className={`status-select status-${outing.status.toLowerCase()}`} value={outing.status} onChange={(event) => onStatusChange(outing.id, event.target.value)}><option>Idea</option><option>Planning</option><option>Confirmed</option><option>Done</option></select></div><p>{outing.date} <span>·</span> {outing.place}</p></div><button className="text-button" onClick={() => goTo('money')}>Expense sheet <Icon name="arrow" size={17} /></button></article>)}</div>
+    <div className="outing-list">{outings.map((outing) => <article className="outing-row" key={outing.id}><span className={`outing-marker marker-${outing.status.toLowerCase()}`}><Icon name={outing.status === 'Done' ? 'check' : 'spark'} size={18} /></span><div className="outing-main"><div className="outing-title-line"><h3>{outing.title}</h3><label className="sr-only" htmlFor={`status-${outing.id}`}>Update status for {outing.title}</label><select id={`status-${outing.id}`} className={`status-select status-${outing.status.toLowerCase()}`} value={outing.status} onChange={(event) => onStatusChange(outing.id, event.target.value)}><option>Idea</option><option>Planning</option><option>Confirmed</option><option>Done</option></select></div><p>{outing.date} <span>·</span> {outing.place}</p></div><button className="text-button" onClick={() => goTo('vault')}>Open vault <Icon name="arrow" size={17} /></button></article>)}</div>
     <div className="soft-callout"><span className="callout-illustration"><Icon name="heart" size={23} /></span><div><strong>Small plans count too.</strong><p>Keep even the “maybe sometime” ideas here until the right day appears.</p></div></div>
   </section>;
 }
 
-function MoneyView({ outings, sheetUrls, onSheetChange, onSheetSave }) {
-  return <section className="page-section">
-    <div className="page-title-row"><div><span className="eyebrow">One sheet for each outing</span><h1>Money, kept simple.</h1><p>Each outing has its own expense sheet. Links added here stay in this planner until you leave or reload it.</p></div><div className="money-stamp">NO<br />SURPRISE<br />SPLITS</div></div>
-    <div className="money-intro"><div className="money-intro-icon"><Icon name="wallet" size={25} /></div><div><strong>The outing’s sheet does the math.</strong><p>Keep detailed costs in the group’s separate sheet. This page only keeps the link and its status.</p></div></div>
-    <div className="expense-list">{outings.map((outing) => {
-      const value = sheetUrls[outing.id] ?? outing.sheetUrl;
-      const added = Boolean(value);
-      return <article className="expense-row" key={outing.id}>
-        <div className="expense-heading"><div><span className="eyebrow">{outing.date}</span><h3>{outing.title}</h3></div><span className={`sheet-status${added ? ' added' : ''}`}><i />{added ? 'Sheet added' : 'Not added'}</span></div>
-        <p className="muted-copy">{outing.place}</p>
-        {added ? <div className="sheet-link-row"><span className="sheet-link-name"><Icon name="link" size={17} /> Expense sheet attached</span><a className="button button-secondary" href={value} target="_blank" rel="noreferrer">Open sheet <Icon name="arrow" size={16} /></a><button className="quiet-button" onClick={() => onSheetChange(outing.id, '')}>Edit link</button></div> : <form className="sheet-form" onSubmit={(event) => { event.preventDefault(); onSheetSave(outing.id); }}><label className="sr-only" htmlFor={`expense-link-${outing.id}`}>Expense sheet URL for {outing.title}</label><input id={`expense-link-${outing.id}`} className="text-input" type="url" placeholder="Paste the shared sheet link" value={sheetUrls[outing.id] ?? ''} onChange={(event) => onSheetChange(outing.id, event.target.value)} /><button className="button button-secondary" type="submit" disabled={!(sheetUrls[outing.id] ?? '').trim()}><Icon name="link" size={16} /> Add sheet link</button></form>}
-      </article>;
-    })}</div>
-  </section>;
-}
-
-function MembersView({ members, setMembers, currentMemberId, onChangeDemoMember }) {
-  const updatePerson = (id, key, value) => setMembers((current) => current.map((person) => person.id === id ? { ...person, [key]: value } : person));
-  return <section className="page-section">
-    <div className="page-title-row"><div><span className="eyebrow">Seven good humans</span><h1>The people behind the plans.</h1><p>Nicknames are optional. Add a birthday or useful note when you want the group to remember it.</p></div><div className="member-count"><strong>07</strong><span>members<br />one group</span></div></div>
-    <div className="profile-note"><Icon name="edit" /><span>You can edit any member’s profile. Changes stay in this browser session.</span>{onChangeDemoMember && <label className="profile-editor">Preview as <MemberSelect currentMemberId={currentMemberId} onChange={onChangeDemoMember} /></label>}</div>
-    <div className="member-grid">{members.map((person) => <article className="member-card" key={person.id}>
-      <div className="member-card-top"><Avatar person={person} /><span className="member-card-spark"><Icon name="spark" size={17} /></span></div>
-      <label className="field-label" htmlFor={`nickname-${person.id}`}>Display nickname</label><input id={`nickname-${person.id}`} className="text-input" placeholder="Choose your own" value={person.nickname} onChange={(event) => updatePerson(person.id, 'nickname', event.target.value)} />
-      <h3>{person.name}</h3>
-      <div className="profile-fields"><label className="field-label" htmlFor={`birthday-${person.id}`}>Birthday<input id={`birthday-${person.id}`} className="text-input" type="text" placeholder="Add a date" value={person.birthday ?? ''} onChange={(event) => updatePerson(person.id, 'birthday', event.target.value)} /></label><label className="field-label" htmlFor={`contact-${person.id}`}>Contact<input id={`contact-${person.id}`} className="text-input" type="text" placeholder="Add a contact" value={person.contact ?? ''} onChange={(event) => updatePerson(person.id, 'contact', event.target.value)} /></label><label className="field-label" htmlFor={`food-${person.id}`}>Dietary notes<input id={`food-${person.id}`} className="text-input" type="text" placeholder="Allergies or preferences" value={person.foodNotes ?? ''} onChange={(event) => updatePerson(person.id, 'foodNotes', event.target.value)} /></label></div>
-      <div className="member-card-foot"><span><i /> Can edit group plans</span></div>
-    </article>)}</div>
-  </section>;
-}
-
-function StudioFooter({ onNavigate, onNewPoll, reduceMotion }) {
-  return (
-    <motion.footer
-      className="studio-footer"
-      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <div className="studio-footer-top">
-        <div className="studio-footer-brand">
-          <span className="studio-footer-wordmark">Fish Upon The Sky</span>
-          <p>Good plans, shared lightly.</p>
-        </div>
-        <button type="button" className="button button-primary" onClick={onNewPoll}>
-          Start a new plan <Icon name="arrow" size={17} />
-        </button>
-      </div>
-
-      <nav className="studio-footer-nav" aria-label="Footer navigation">
-        {navItems.map((item, index) => (
-          <Fragment key={item.id}>
-            <button type="button" onClick={() => onNavigate(item.id)}>{item.label}</button>
-            {index < navItems.length - 1 && <DotRule />}
-          </Fragment>
-        ))}
-      </nav>
-
-      <div className="studio-footer-meta">
-        <span>A LITTLE PLAN, A LOT OF SKY</span>
-        <DotRule />
-        <span>07 MEMBERS · INVITE ONLY</span>
-      </div>
-    </motion.footer>
-  );
-}
-
-export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExitDemo, onSignOut, passwordResetNotice }) {
+export function PlannerApp({
+  currentMemberId: entryMemberId,
+  currentUserEmail = '',
+  googleAccessToken = '',
+  onUpdateGoogleToken,
+  onClearGoogleToken,
+  identityMode,
+  onExitDemo,
+  onSignOut,
+  passwordResetNotice,
+}) {
   const reduceMotion = useReducedMotion();
   const [showReveal, setShowReveal] = useState(true);
   const [theme, setTheme] = useState('dark');
   const [activeTab, setActiveTab] = useState('home');
   const [showPollModal, setShowPollModal] = useState(false);
+  const didMountTabRef = useRef(false);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+  const navigateToTab = (tabId) => {
+    setActiveTab(tabId);
+    scrollToTop();
+  };
+
+  useEffect(() => {
+    if (!didMountTabRef.current) {
+      didMountTabRef.current = true;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [activeTab, reduceMotion]);
   const isDemo = identityMode === 'demo';
   const [demoMemberId, setDemoMemberId] = useState(entryMemberId);
   const currentMemberId = isDemo ? demoMemberId : entryMemberId;
   const onChangeDemoMember = isDemo ? setDemoMemberId : undefined;
   const [busyDays, setBusyDays] = useState({});
-  const [members, setMembers] = useState(people.map((person) => ({ ...person, nickname: '', birthday: '', foodNotes: '' })));
+  const [members, setMembers] = useState(() => loadMemberProfiles(people));
   const [polls, setPolls] = useState(initialPolls);
   const [outings, setOutings] = useState(initialOutings);
-  const [sheetUrls, setSheetUrls] = useState({});
+
+  const updateMemberProfile = (memberId, patch) => {
+    if (memberId !== currentMemberId) {
+      return { ok: false, error: 'Chỉ chủ hồ sơ mới có quyền chỉnh sửa.' };
+    }
+    const nextMembers = members.map((person) =>
+      person.id === memberId ? { ...person, ...patch, id: person.id, name: person.name, color: person.color } : person,
+    );
+    const saved = saveMemberProfiles(nextMembers);
+    if (!saved.ok) {
+      return saved;
+    }
+    setMembers(nextMembers);
+    return { ok: true };
+  };
   const currentMember = members.find(person => person.id === currentMemberId);
   const displayName = currentMember.nickname || currentMember.name;
   const hasOpenPoll = polls.some((poll) => poll.status === 'Voting');
@@ -411,6 +690,7 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
   const navTabs = navItems.map((item) => {
     if (item.id === 'home') return { ...item, count: pendingTaskCount };
     if (item.id === 'outings') return { ...item, count: outings.length, notice: hasOpenPoll };
+    if (item.id === 'vault') return { ...item, count: outings.length };
     if (item.id === 'members') return { ...item, count: members.length };
     return item;
   });
@@ -423,13 +703,26 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
   }));
   const createPoll = (poll) => {
     setPolls((current) => [poll, ...current]);
-    setOutings((current) => [{ id: poll.id, title: poll.title, date: 'Vote closes Nov 27', place: 'Choosing together', status: 'Planning', sheetUrl: '' }, ...current]);
+    setOutings((current) => [{
+      id: poll.id,
+      title: poll.title,
+      date: 'Vote closes Nov 27',
+      place: 'Choosing together',
+      status: 'Planning',
+      sheetUrl: '',
+      albumUrl: '',
+      photos: [],
+      places: [],
+      notes: [],
+    }, ...current]);
     setShowPollModal(false);
     setActiveTab('outings');
   };
-  const changeSheet = (outingId, value) => setSheetUrls((current) => ({ ...current, [outingId]: value }));
-  const saveSheet = (outingId) => {
-    setOutings((current) => current.map((outing) => outing.id === outingId ? { ...outing, sheetUrl: sheetUrls[outingId]?.trim() ?? '' } : outing));
+  const updateTripVault = (tripId, updater) => {
+    setOutings((current) => current.map((trip) => (trip.id === tripId ? updater(trip) : trip)));
+  };
+  const addPastTrip = (newTrip) => {
+    setOutings((current) => [newTrip, ...current]);
   };
   const changeOutingStatus = (outingId, status) => setOutings((current) => current.map((outing) => outing.id === outingId ? { ...outing, status } : outing));
 
@@ -447,7 +740,7 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
 
     <header className="studio-header">
       <div className="header-left">
-        <button type="button" className="brand-lockup" onClick={() => setActiveTab('home')} aria-label="Fish Upon The Sky home">
+        <button type="button" className="brand-lockup" onClick={() => navigateToTab('home')} aria-label="Fish Upon The Sky home">
           <img className="brand-fish" src={logo} alt="" />
           <strong>Fish Upon The Sky</strong>
         </button>
@@ -455,11 +748,11 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
       </div>
 
       <nav className="header-nav" aria-label="Main navigation">
-        <SlidingPillTabs
+        <LiquidGlassTabBar
           items={navTabs}
           activeId={activeTab}
-          onChange={setActiveTab}
-          layoutId="main-nav-pill"
+          onChange={navigateToTab}
+          variant="header"
           ariaLabel="Primary pages"
         />
       </nav>
@@ -481,7 +774,7 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
             <MemberSelect id="header-member" currentMemberId={currentMemberId} onChange={onChangeDemoMember} />
           </div>
         ) : (
-          <div className="topbar-member" title={`Signed in as ${currentMember.name}`}>
+          <div className="topbar-member" title={currentUserEmail ? `Signed in as ${currentMember.name} (${currentUserEmail})` : `Signed in as ${currentMember.name}`}>
             <Avatar person={currentMember} small />
             <span>{displayName}</span>
           </div>
@@ -517,31 +810,103 @@ export function PlannerApp({ currentMemberId: entryMemberId, identityMode, onExi
                 onVote={toggleVote}
                 currentMemberId={currentMemberId}
                 currentMemberName={displayName}
-                goTo={setActiveTab}
+                goTo={navigateToTab}
               />
             )}
-            {activeTab === 'calendar' && <CalendarView onNewPoll={() => setShowPollModal(true)} currentMemberId={currentMemberId} onChangeDemoMember={onChangeDemoMember} busyDays={busyDays} setBusyDays={setBusyDays} />}
-            {activeTab === 'outings' && <OutingsView polls={polls} outings={outings} onNewPoll={() => setShowPollModal(true)} currentMemberId={currentMemberId} onVote={toggleVote} goTo={setActiveTab} onStatusChange={changeOutingStatus} />}
-            {activeTab === 'money' && <MoneyView outings={outings} sheetUrls={sheetUrls} onSheetChange={changeSheet} onSheetSave={saveSheet} />}
-            {activeTab === 'members' && <MembersView members={members} setMembers={setMembers} currentMemberId={currentMemberId} onChangeDemoMember={onChangeDemoMember} />}
+            {activeTab === 'calendar' && (
+              <CalendarView
+                onNewPoll={() => setShowPollModal(true)}
+                currentMemberId={currentMemberId}
+                currentMemberName={displayName}
+                currentUserEmail={currentUserEmail}
+                googleAccessToken={googleAccessToken}
+                onUpdateGoogleToken={onUpdateGoogleToken}
+                onClearGoogleToken={onClearGoogleToken}
+                onChangeDemoMember={onChangeDemoMember}
+                busyDays={busyDays}
+                setBusyDays={setBusyDays}
+                polls={polls}
+              />
+            )}
+            {activeTab === 'outings' && <OutingsView polls={polls} outings={outings} onNewPoll={() => setShowPollModal(true)} currentMemberId={currentMemberId} onVote={toggleVote} goTo={navigateToTab} onStatusChange={changeOutingStatus} />}
+            {activeTab === 'vault' && (
+              <TripVaultView
+                trips={outings}
+                theme={theme}
+                currentMemberName={displayName}
+                onUpdateTrip={updateTripVault}
+                onAddPastTrip={addPastTrip}
+              />
+            )}
+            {activeTab === 'members' && (
+              <FishesView
+                members={members}
+                outings={outings}
+                currentMemberId={currentMemberId}
+                onUpdateMember={updateMemberProfile}
+                onNewPoll={() => setShowPollModal(true)}
+                onNavigate={navigateToTab}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
-        <StudioFooter onNavigate={setActiveTab} onNewPoll={() => setShowPollModal(true)} reduceMotion={reduceMotion} />
       </main>
+      <BeamWordmarkFooter
+        onNavigate={navigateToTab}
+        onNewPoll={() => setShowPollModal(true)}
+        onScrollTop={scrollToTop}
+      />
     </div>
 
-    <nav className="mobile-nav" aria-label="Mobile navigation">{navItems.map((item) => <button key={item.id} className={activeTab === item.id ? 'is-active' : ''} onClick={() => setActiveTab(item.id)}><Icon name={item.icon} size={19} /><span>{item.label}</span></button>)}</nav>
+    <nav className="mobile-nav" aria-label="Mobile navigation">
+      <LiquidGlassTabBar
+        items={navTabs}
+        activeId={activeTab}
+        onChange={navigateToTab}
+        variant="dock"
+        ariaLabel="Mobile navigation"
+      />
+    </nav>
     <AnimatePresence>{showPollModal && <NewPollModal onClose={() => setShowPollModal(false)} onCreate={createPoll} reduceMotion={reduceMotion} />}</AnimatePresence>
   </div>;
 }
 
 export default function App() {
   const [demoMemberId, setDemoMemberId] = useState(null);
+  const [gmailSession, setGmailSession] = useState(() => loadGmailSession());
+  const [googleAccessToken, setGoogleAccessToken] = useState('');
   const restoreDemoFocus = useRef(false);
 
   function exitDemo() {
     restoreDemoFocus.current = true;
     setDemoMemberId(null);
+  }
+
+  function enterGmail(session) {
+    setGoogleAccessToken(session.accessToken || '');
+    saveGmailSession(session);
+    setGmailSession({
+      email: session.email,
+      sub: session.sub || '',
+      memberId: session.memberId,
+      name: session.name || '',
+      picture: session.picture || '',
+    });
+  }
+
+  function exitGmail() {
+    if (googleAccessToken) revokeGoogleToken(googleAccessToken);
+    setGoogleAccessToken('');
+    clearGmailSession();
+    setGmailSession(null);
+  }
+
+  function updateGoogleToken({ accessToken }) {
+    setGoogleAccessToken(accessToken || '');
+  }
+
+  function clearGoogleToken() {
+    setGoogleAccessToken('');
   }
 
   function focusDemoButton(button) {
@@ -554,6 +919,19 @@ export default function App() {
   if (demoMemberId) {
     return <PlannerApp currentMemberId={demoMemberId} identityMode="demo" onExitDemo={exitDemo} />;
   }
+  if (gmailSession && people.some((person) => person.id === gmailSession.memberId)) {
+    return (
+      <PlannerApp
+        currentMemberId={gmailSession.memberId}
+        currentUserEmail={gmailSession.email}
+        googleAccessToken={googleAccessToken}
+        onUpdateGoogleToken={updateGoogleToken}
+        onClearGoogleToken={clearGoogleToken}
+        identityMode="gmail"
+        onSignOut={exitGmail}
+      />
+    );
+  }
   return <ClerkAuthRoot publishableKey={clerkPublishableKey} members={people} onEnterDemo={setDemoMemberId}
-    demoButtonRef={focusDemoButton} renderPlanner={identity => <PlannerApp {...identity} />} />;
+    onEnterGmail={enterGmail} demoButtonRef={focusDemoButton} renderPlanner={identity => <PlannerApp {...identity} />} />;
 }

@@ -1,6 +1,18 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import logo from '../../Logo/Logo.svg';
+import { googleClientId, hasGoogleOAuth } from './auth-config.js';
+import {
+  GOOGLE_LOGIN_SCOPES,
+  allowLocalGmailFallback,
+  bindIdentityToMember,
+  fetchGoogleUserProfile,
+  getBoundMemberIds,
+  getMemberForIdentity,
+  isValidGmailAddress,
+  normalizeEmail,
+  requestGoogleOAuthToken,
+} from './google-auth.js';
 
 const ringSizes = [300, 372, 452, 542, 644, 758, 884, 1000];
 
@@ -72,11 +84,33 @@ const screens = {
     pending: 'Saving new password…',
     error: 'The password could not be saved. Try a different password or request another code.',
   },
+  gmail: {
+    heading: 'Sign in with Gmail',
+    intro: 'Enter your Gmail once — we’ll remember which member you are for every next visit.',
+    action: 'Continue with Gmail',
+    pending: 'Connecting Gmail…',
+    error: 'Enter a valid Gmail address (for example, name@gmail.com).',
+  },
+  pickMember: {
+    heading: 'Who are you?',
+    intro: 'Link this Gmail to your group profile once. We won’t ask again next time.',
+  },
   demo: {
     heading: 'Choose a member',
     intro: 'Pick a name to explore the planner with sample data.',
   },
 };
+
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.63v3.01h3.88c2.27-2.09 3.54-5.17 3.54-8.88Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.46 1.15-4.05 1.15-3.12 0-5.77-2.11-6.72-4.96H1.28v3.1A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.28 14.27A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.27V6.63H1.28A12 12 0 0 0 0 12c0 1.94.46 3.77 1.28 5.37l4-3.1Z" />
+      <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.58 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.69 1.28 6.63l4 3.1c.95-2.85 3.6-4.96 6.72-4.96Z" />
+    </svg>
+  );
+}
 
 function AuthIcon({ name, className = '' }) {
   const common = {
@@ -298,15 +332,20 @@ function Field({ name, label, icon, type = 'text', autoComplete, error, actionEr
 }
 
 export default function AuthEntry({
-  authConfigured, members, onEnterDemo, demoButtonRef, onSignIn, onSendDeviceCode, onVerifyDeviceCode,
+  authConfigured, members, onEnterDemo, onEnterGmail, demoButtonRef, onSignIn, onSendDeviceCode, onVerifyDeviceCode,
   onStartRecovery, onVerifyRecoveryCode, onSubmitRecoveryPassword, onFinalize,
 }) {
   const [screen, setScreen] = useState('signIn');
   const [hovering, setHovering] = useState(false);
   const [pending, setPending] = useState('');
+  const [googlePending, setGooglePending] = useState('');
   const [email, setEmail] = useState('');
+  const [pendingGmail, setPendingGmail] = useState(null);
+  const [gmailValue, setGmailValue] = useState('');
   const [errors, setErrors] = useState({});
   const [actionError, setActionError] = useState('');
+  const [googleError, setGoogleError] = useState('');
+  const [googleNotice, setGoogleNotice] = useState('');
   const [notice, setNotice] = useState('');
   const [feedbackFocus, setFeedbackFocus] = useState(null);
   const formRef = useRef(null);
@@ -314,7 +353,9 @@ export default function AuthEntry({
   const lastScreen = useRef(screen);
   const reduceMotion = useReducedMotion();
   const copy = screens[screen];
-  const busy = Boolean(pending);
+  const formBusy = Boolean(pending);
+  const googleBusy = Boolean(googlePending);
+  const busy = formBusy || googleBusy;
   const verifyingDevice = screen === 'verifyDevice' || screen === 'verifyRecoveryDevice';
   const finishingSignIn = screen === 'finishSignIn' || screen === 'finishRecovery';
 
@@ -332,9 +373,100 @@ export default function AuthEntry({
     setFeedbackFocus(null);
     setErrors({});
     setActionError('');
+    setGoogleError('');
+    setGoogleNotice('');
     setNotice('');
     if (next === 'signIn' || next === 'demo') setEmail('');
+    if (next === 'signIn') setPendingGmail(null);
     setScreen(next);
+  }
+
+  async function startGoogleSignIn() {
+    if (busy) return;
+    setActionError('');
+    setGoogleError('');
+    setGoogleNotice('');
+    setErrors({});
+    if (!hasGoogleOAuth) {
+      if (!allowLocalGmailFallback) {
+        setGoogleError('Google OAuth Client ID is not configured for production.');
+        return;
+      }
+      open('gmail');
+      return;
+    }
+    setGooglePending('Opening Google sign-in…');
+    try {
+      const token = await requestGoogleOAuthToken({
+        clientId: googleClientId,
+        scope: GOOGLE_LOGIN_SCOPES,
+        prompt: 'select_account',
+      });
+      const profile = await fetchGoogleUserProfile(token.accessToken);
+      const existingMemberId = getMemberForIdentity({ sub: profile.sub, email: profile.email });
+      const validExisting = members.some((m) => m.id === existingMemberId);
+      const sessionPayload = {
+        sub: profile.sub,
+        email: profile.email,
+        name: profile.name,
+        picture: profile.picture,
+        accessToken: token.accessToken,
+        expiresAt: token.expiresAt,
+      };
+      if (validExisting) {
+        onEnterGmail?.({ ...sessionPayload, memberId: existingMemberId });
+        return;
+      }
+      setPendingGmail(sessionPayload);
+      open('pickMember');
+    } catch (err) {
+      if (err?.code === 'cancelled') {
+        setGoogleNotice('Google sign-in was cancelled. You can try again anytime.');
+      } else {
+        setGoogleError(err?.message || 'Google sign-in could not be completed. Please try again.');
+      }
+    } finally {
+      setGooglePending('');
+    }
+  }
+
+  function submitGmailEmail(event) {
+    event.preventDefault();
+    if (busy) return;
+    const clean = normalizeEmail(gmailValue);
+    if (!isValidGmailAddress(clean)) {
+      setErrors({ gmailEmail: screens.gmail.error });
+      return;
+    }
+    setErrors({});
+    setActionError('');
+    setGoogleError('');
+    const existingMemberId = getMemberForIdentity({ email: clean });
+    const validExisting = members.some((m) => m.id === existingMemberId);
+    const sessionPayload = {
+      sub: '',
+      email: clean,
+      name: '',
+      picture: '',
+      accessToken: '',
+      expiresAt: 0,
+    };
+    if (validExisting) {
+      onEnterGmail?.({ ...sessionPayload, memberId: existingMemberId });
+      return;
+    }
+    setPendingGmail(sessionPayload);
+    open('pickMember');
+  }
+
+  function bindAndEnterMember(memberId) {
+    if (!pendingGmail?.email) return;
+    const res = bindIdentityToMember({ sub: pendingGmail.sub, email: pendingGmail.email }, memberId);
+    if (!res.ok) {
+      setGoogleError('That member profile is already linked to another Gmail.');
+      return;
+    }
+    onEnterGmail?.({ ...pendingGmail, memberId });
   }
 
   function showActionError(message, focus = 'submitAction') {
@@ -475,13 +607,97 @@ export default function AuthEntry({
               </button>
             ))}
           </motion.div>
+        ) : screen === 'pickMember' ? (
+          <motion.div {...itemProps}>
+            {pendingGmail?.email && (
+              <div className="auth-gmail-pill">
+                <GoogleMark />
+                <span>{pendingGmail.email}</span>
+              </div>
+            )}
+            {googleError && <p className="auth-action-error auth-google-error" role="alert">{googleError}</p>}
+            <div className="auth-members" role="group" aria-label="Link Gmail to group member">
+              {(() => {
+                const claimedIds = getBoundMemberIds();
+                return members.map(member => {
+                  const taken = claimedIds.has(member.id);
+                  return (
+                    <button
+                      className="auth-member"
+                      key={member.id}
+                      type="button"
+                      disabled={taken}
+                      aria-disabled={taken || undefined}
+                      title={taken ? 'Already linked to another Gmail' : `Link as ${member.name}`}
+                      onClick={() => bindAndEnterMember(member.id)}
+                    >
+                      <span>{member.name}</span>
+                      {taken ? <span className="auth-member-linked">Taken</span> : <AuthIcon name="arrow" />}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </motion.div>
+        ) : screen === 'gmail' ? (
+          <motion.div {...itemProps}>
+            <form noValidate onSubmit={submitGmailEmail} aria-busy={busy}>
+              <fieldset className="auth-fields" disabled={busy}>
+                <Field
+                  name="gmailEmail"
+                  label="Gmail address"
+                  icon="mail"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@gmail.com"
+                  value={gmailValue}
+                  onChange={(event) => {
+                    setGmailValue(event.target.value);
+                    if (errors.gmailEmail) setErrors({});
+                  }}
+                  error={errors.gmailEmail}
+                />
+              </fieldset>
+              <button
+                className="auth-primary"
+                type="submit"
+                disabled={busy}
+                onPointerEnter={() => setHovering(true)}
+                onPointerLeave={() => setHovering(false)}
+              >
+                {copy.action}
+                <AuthIcon name="arrow" />
+              </button>
+            </form>
+          </motion.div>
         ) : (
           <motion.div {...itemProps}>
+            {screen === 'signIn' && (
+              <>
+                <button
+                  type="button"
+                  className="auth-google-button"
+                  disabled={busy || (!hasGoogleOAuth && !allowLocalGmailFallback)}
+                  onClick={startGoogleSignIn}
+                  onPointerEnter={() => setHovering(true)}
+                  onPointerLeave={() => setHovering(false)}
+                >
+                  <GoogleMark />
+                  <span>{googleBusy ? googlePending : 'Continue with Gmail'}</span>
+                  {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+                </button>
+                {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
+                {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
+                <div className="auth-or" aria-hidden="true">
+                  <i /><span>or sign in with account</span><i />
+                </div>
+              </>
+            )}
             {!authConfigured && (
-              <p className="auth-notice">Member sign-in isn’t configured yet. You can still explore the demo.</p>
+              <p className="auth-notice">Password sign-in isn’t configured yet. Continue with Gmail or explore the demo.</p>
             )}
             {notice && <p role="status" className="auth-notice auth-success">{notice}</p>}
-            <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={busy}>
+            <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={formBusy}>
               {!finishingSignIn && (
                 <fieldset className="auth-fields" disabled={busy || !authConfigured}>
                   {screen === 'signIn' && (
@@ -528,13 +744,13 @@ export default function AuthEntry({
                 onBlur={() => setHovering(false)}
               >
                 {pending || copy.action}
-                {busy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+                {formBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
               </button>
             </form>
             <span className="sr-only" role="alert" aria-atomic="true">
               {feedbackFocus?.announcement && <span key={feedbackFocus.attempt}>{feedbackFocus.announcement}</span>}
             </span>
-            <span className="sr-only" role="status">{pending}</span>
+            <span className="sr-only" role="status">{pending || googlePending}</span>
             {screen === 'signIn' && (
               <>
                 <div className="auth-or" aria-hidden="true">

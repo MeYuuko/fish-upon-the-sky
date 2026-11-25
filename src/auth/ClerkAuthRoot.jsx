@@ -41,7 +41,7 @@ function requireRecoveryConnection() {
   if (navigator.onLine === false) throw new ClerkOfflineError('Browser offline');
 }
 
-function SignInEntry({ members, onEnterDemo, demoButtonRef, onPasswordReset }) {
+function SignInEntry({ members, onEnterDemo, onEnterGmail, demoButtonRef, onPasswordReset }) {
   const { signIn } = useSignIn();
   const recoveryAttempt = useRef(null);
 
@@ -113,13 +113,13 @@ function SignInEntry({ members, onEnterDemo, demoButtonRef, onPasswordReset }) {
     return { needsDeviceVerification: signIn.status === 'needs_client_trust' };
   }
 
-  return <AuthEntry authConfigured members={members} onEnterDemo={onEnterDemo} demoButtonRef={demoButtonRef}
+  return <AuthEntry authConfigured members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef}
     onSignIn={signInWithPassword} onSendDeviceCode={sendDeviceCode} onVerifyDeviceCode={verifyDeviceCode}
     onStartRecovery={startRecovery} onVerifyRecoveryCode={verifyRecoveryCode}
     onSubmitRecoveryPassword={submitRecoveryPassword} onFinalize={finalize} />;
 }
 
-function SessionGate({ members, onEnterDemo, demoButtonRef, renderPlanner }) {
+function SessionGate({ members, onEnterDemo, onEnterGmail, demoButtonRef, renderPlanner }) {
   const auth = useAuth();
   const { isLoaded, user } = useUser();
   const clerk = useClerk();
@@ -133,7 +133,7 @@ function SessionGate({ members, onEnterDemo, demoButtonRef, renderPlanner }) {
   if (sessionPending) {
     content = <AuthStatus heading="Opening your planner"><p role="status">Checking your sign-in…</p></AuthStatus>;
   } else if (!auth.isSignedIn) {
-    content = <SignInEntry members={members} onEnterDemo={onEnterDemo} demoButtonRef={demoButtonRef}
+    content = <SignInEntry members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef}
       onPasswordReset={setPasswordResetSessionId} />;
   } else {
     const memberId = user?.publicMetadata?.memberId;
@@ -153,9 +153,9 @@ function SessionGate({ members, onEnterDemo, demoButtonRef, renderPlanner }) {
   </>;
 }
 
-export default function ClerkAuthRoot({ publishableKey, members, onEnterDemo, demoButtonRef, renderPlanner }) {
-  if (!publishableKey) return <AuthEntry authConfigured={false} members={members} onEnterDemo={onEnterDemo} demoButtonRef={demoButtonRef} />;
+export default function ClerkAuthRoot({ publishableKey, members, onEnterDemo, onEnterGmail, demoButtonRef, renderPlanner }) {
+  if (!publishableKey) return <AuthEntry authConfigured={false} members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef} />;
   return <ClerkProvider publishableKey={publishableKey}>
-    <SessionGate members={members} onEnterDemo={onEnterDemo} demoButtonRef={demoButtonRef} renderPlanner={renderPlanner} />
+    <SessionGate members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef} renderPlanner={renderPlanner} />
   </ClerkProvider>;
 }
