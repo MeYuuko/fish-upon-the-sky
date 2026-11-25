@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import logo from '../../Logo/Logo.svg';
 
 const ringSizes = [300, 372, 452, 542, 644, 758, 884, 1000];
+const memberDotColors = ['blue', 'lemon', 'cream', 'sky', 'cream', 'lemon', 'blue'];
 
 const portalEase = [0.22, 1, 0.36, 1];
 
@@ -10,7 +11,11 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.055, delayChildren: 0.06 },
+    transition: { staggerChildren: 0.055, delayChildren: 0.08 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.16, ease: portalEase },
   },
 };
 
@@ -24,6 +29,7 @@ const staggerItem = {
 };
 
 const deviceVerification = {
+  eyebrow: 'DEVICE VERIFICATION',
   heading: 'Verify this device',
   intro: 'Enter the verification code from your account email.',
   action: 'Verify code',
@@ -32,6 +38,7 @@ const deviceVerification = {
 };
 
 const finishSignIn = {
+  eyebrow: 'COMPLETING SIGN-IN',
   heading: 'Finish signing in',
   intro: 'Continue to your group planner.',
   action: 'Continue to planner',
@@ -41,8 +48,10 @@ const finishSignIn = {
 
 const screens = {
   signIn: {
+    eyebrow: 'FISH UPON THE SKY · PORTAL',
     heading: 'Welcome back.',
-    intro: 'A little plan, a lot of sky — sign in to your group planner.',
+    intro: 'Sign in to open the group planner.',
+    googleOnlyIntro: 'A little plan, a lot of sky — sign in with your linked Gmail to enter the group space.',
     action: 'Sign in',
     pending: 'Signing in…',
     error: 'Sign-in was unsuccessful. Check your username and password, then try again.',
@@ -52,6 +61,7 @@ const screens = {
   finishSignIn,
   finishRecovery: { ...finishSignIn, intro: 'Continue to the planner with your updated password.' },
   recovery: {
+    eyebrow: 'ACCOUNT RECOVERY',
     heading: 'Forgot your password?',
     intro: 'Enter the verified email address for your account to request a recovery code.',
     action: 'Send recovery code',
@@ -59,6 +69,7 @@ const screens = {
     error: 'Couldn’t reach the sign-in service. Check your connection and try again.',
   },
   recoveryCode: {
+    eyebrow: 'ACCOUNT RECOVERY',
     heading: 'Check your email',
     intro: 'If that address matches an eligible account, a recovery code is on its way. Enter it below to continue.',
     action: 'Verify recovery code',
@@ -66,6 +77,7 @@ const screens = {
     error: 'The recovery code could not be accepted. Check it or request another code.',
   },
   resetPassword: {
+    eyebrow: 'ACCOUNT RECOVERY',
     heading: 'Reset your password',
     intro: 'Choose a new password for your account.',
     action: 'Save new password',
@@ -73,6 +85,14 @@ const screens = {
     error: 'The password could not be saved. Try a different password or request another code.',
   },
 };
+
+function readStoredTheme() {
+  try {
+    return localStorage.getItem('fish-theme') || 'dark';
+  } catch {
+    return 'dark';
+  }
+}
 
 function GoogleMark() {
   return (
@@ -88,12 +108,12 @@ function GoogleMark() {
 function AuthIcon({ name, className = '' }) {
   const common = {
     className,
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 1.6,
+    strokeWidth: 1.75,
     strokeLinecap: 'round',
     strokeLinejoin: 'round',
     'aria-hidden': 'true',
@@ -140,6 +160,21 @@ function AuthIcon({ name, className = '' }) {
       </svg>
     );
   }
+  if (name === 'moon') {
+    return (
+      <svg {...common}>
+        <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+      </svg>
+    );
+  }
+  if (name === 'sun') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
+      </svg>
+    );
+  }
   return (
     <svg {...common}>
       <path d="M4 12h15m-6-6 6 6-6 6" />
@@ -150,33 +185,40 @@ function AuthIcon({ name, className = '' }) {
 function PortalBackground({ portalRef, reduceMotion }) {
   useEffect(() => {
     const portal = portalRef.current;
-    if (!portal || reduceMotion) return;
+    if (!portal || reduceMotion) return undefined;
+    if (window.matchMedia('(pointer: coarse)').matches) return undefined;
 
-    let frame;
+    let frame = 0;
     let px = 0;
     let py = 0;
     let targetX = 0;
     let targetY = 0;
 
+    const animate = () => {
+      px += (targetX - px) * 0.06;
+      py += (targetY - py) * 0.06;
+
+      portal.style.setProperty('--tx', `${(px * -14).toFixed(2)}px`);
+      portal.style.setProperty('--ty', `${(py * -10).toFixed(2)}px`);
+
+      if (Math.abs(targetX - px) > 0.001 || Math.abs(targetY - py) > 0.001) {
+        frame = requestAnimationFrame(animate);
+      } else {
+        frame = 0;
+      }
+    };
+
     const handlePointerMove = (event) => {
       targetX = (event.clientX / window.innerWidth) * 2 - 1;
       targetY = (event.clientY / window.innerHeight) * 2 - 1;
-    };
-
-    const animate = () => {
-      px += (targetX - px) * 0.05;
-      py += (targetY - py) * 0.05;
-      portal.style.setProperty('--tx', `${px * -14}px`);
-      portal.style.setProperty('--ty', `${py * -10}px`);
-      frame = requestAnimationFrame(animate);
+      if (!frame) frame = requestAnimationFrame(animate);
     };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    frame = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
-      cancelAnimationFrame(frame);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, [portalRef, reduceMotion]);
 
@@ -184,22 +226,22 @@ function PortalBackground({ portalRef, reduceMotion }) {
     <div className="auth-portal-layer" aria-hidden="true">
       <motion.div
         className="auth-glow"
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: reduceMotion ? 0 : 0.8, ease: portalEase }}
+        transition={{ duration: reduceMotion ? 0 : 0.85, ease: portalEase }}
       />
       <motion.svg
         className="auth-rings"
         viewBox="0 0 2000 2000"
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: reduceMotion ? 0 : 0.75, ease: portalEase }}
+        transition={{ duration: reduceMotion ? 0 : 0.8, ease: portalEase }}
       >
         <defs>
           <linearGradient id="fish-arc-gradient" gradientUnits="userSpaceOnUse" x1="300" y1="300" x2="1700" y2="1700">
-            <stop stopColor="var(--palette-citrus)" />
-            <stop offset="0.55" stopColor="var(--palette-sea)" />
-            <stop offset="1" stopColor="var(--palette-amalfi)" />
+            <stop offset="0%" style={{ stopColor: 'var(--auth-arc-start)' }} />
+            <stop offset="55%" style={{ stopColor: 'var(--auth-arc-mid)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--auth-arc-end)' }} />
           </linearGradient>
         </defs>
         <circle className="auth-wave" cx="1000" cy="1000" r="300" />
@@ -232,9 +274,20 @@ function PortalBackground({ portalRef, reduceMotion }) {
 export function AuthLayout({ children, hovering = false }) {
   const portalRef = useRef(null);
   const reduceMotion = useReducedMotion();
+  const [theme, setTheme] = useState(readStoredTheme);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fish-theme', theme);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
 
   return (
-    <div ref={portalRef} className={`auth-page${hovering ? ' is-hovering' : ''}`}>
+    <div ref={portalRef} className={`auth-page${theme === 'dark' ? ' theme-dark' : ''}${hovering ? ' is-hovering' : ''}`}>
       <PortalBackground portalRef={portalRef} reduceMotion={reduceMotion} />
 
       <motion.header
@@ -244,16 +297,43 @@ export function AuthLayout({ children, hovering = false }) {
         transition={{ duration: reduceMotion ? 0 : 0.45, ease: portalEase }}
       >
         <div className="auth-brand">
-          <img src={logo} alt="" />
+          <span className="auth-brand-badge">
+            <img src={logo} alt="" />
+          </span>
           <span>Fish Upon The Sky</span>
         </div>
-        <span className="auth-badge">Invite-only · 7 members</span>
+
+        <div className="auth-top-actions">
+          <span className="auth-badge">
+            <span className="auth-badge-dot" aria-hidden="true" />
+            07 MEMBERS · INVITE ONLY
+          </span>
+          <button
+            type="button"
+            className="auth-theme-toggle"
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            onClick={toggleTheme}
+          >
+            <AuthIcon name={theme === 'light' ? 'moon' : 'sun'} />
+          </button>
+        </div>
       </motion.header>
 
       <main className="auth-col">
-        <section className="auth-card" aria-labelledby="auth-heading">
+        <motion.section
+          className="auth-card"
+          aria-labelledby="auth-heading"
+          initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.55, ease: portalEase }}
+        >
+          <span className="auth-crosshair tl" aria-hidden="true">+</span>
+          <span className="auth-crosshair tr" aria-hidden="true">+</span>
+          <span className="auth-crosshair bl" aria-hidden="true">+</span>
+          <span className="auth-crosshair br" aria-hidden="true">+</span>
           {children}
-        </section>
+        </motion.section>
       </main>
 
       <motion.footer
@@ -263,7 +343,10 @@ export function AuthLayout({ children, hovering = false }) {
         transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.12, ease: portalEase }}
       >
         <span>A little plan, a lot of sky.</span>
-        <span>Fish Upon The Sky · 7 members</span>
+        <span className="auth-foot-meta">
+          <span className="dot-rule" aria-hidden="true"><i /><span /><i /></span>
+          <span>Private Group Space · 07 Fishes</span>
+        </span>
       </motion.footer>
     </div>
   );
@@ -329,6 +412,8 @@ export default function AuthEntry({
   const busy = formBusy || googleBusy;
   const verifyingDevice = screen === 'verifyDevice' || screen === 'verifyRecoveryDevice';
   const finishingSignIn = screen === 'finishSignIn' || screen === 'finishRecovery';
+  const googleOnlyMode = !authConfigured && screen === 'signIn';
+  const introText = googleOnlyMode ? copy.googleOnlyIntro : copy.intro;
 
   useEffect(() => {
     if (screen !== lastScreen.current) heading.current?.focus();
@@ -478,109 +563,149 @@ export default function AuthEntry({
     if (actionError) setActionError('');
   }
 
+  const hoverHandlers = {
+    onPointerEnter: () => setHovering(true),
+    onPointerLeave: () => setHovering(false),
+    onFocus: () => setHovering(true),
+    onBlur: () => setHovering(false),
+  };
+
   const motionProps = reduceMotion
     ? {}
-    : { variants: staggerContainer, initial: 'hidden', animate: 'visible' };
+    : { variants: staggerContainer, initial: 'hidden', animate: 'visible', exit: 'exit' };
   const itemProps = reduceMotion ? {} : { variants: staggerItem };
 
   return (
     <AuthLayout hovering={hovering}>
-      <motion.div className="auth-inner" key={screen} {...motionProps}>
-        <motion.div className="auth-mark" {...itemProps}>
-          <img src={logo} alt="" />
-        </motion.div>
-        {screen !== 'signIn' && (
-          <motion.div className="auth-back-wrap" {...itemProps}>
-            <button className="auth-link auth-back" type="button" disabled={busy} onClick={() => open('signIn')}>
-              <AuthIcon name="arrow" className="auth-arrow-back" /> Back to sign in
-            </button>
+      <AnimatePresence mode="wait">
+        <motion.div className="auth-inner" key={screen} {...motionProps}>
+          <motion.div className="auth-mark" {...itemProps}>
+            <img src={logo} alt="" />
           </motion.div>
-        )}
-        <motion.h1 id="auth-heading" ref={heading} tabIndex="-1" {...itemProps}>{copy.heading}</motion.h1>
-        <motion.p className="auth-intro" {...itemProps}>{copy.intro}</motion.p>
 
-        <motion.div {...itemProps}>
-          {screen === 'signIn' && (
-            <>
-              <button
-                type="button"
-                className="auth-google-button"
-                disabled={busy || !googleAvailable}
-                onClick={startGoogleSignIn}
-                onPointerEnter={() => setHovering(true)}
-                onPointerLeave={() => setHovering(false)}
-              >
-                <GoogleMark />
-                <span>{googleBusy ? googlePending : 'Continue with Gmail'}</span>
-                {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+          {screen !== 'signIn' && (
+            <motion.div className="auth-back-wrap" {...itemProps}>
+              <button className="auth-link auth-back" type="button" disabled={busy} onClick={() => open('signIn')}>
+                <AuthIcon name="arrow" className="auth-arrow-back" /> Back to sign in
               </button>
-              {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
-              {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
-              <div className="auth-or" aria-hidden="true">
-                <i /><span>or sign in with account</span><i />
-              </div>
-            </>
+            </motion.div>
           )}
-          {!authConfigured && (
-            <p className="auth-notice">Password sign-in isn’t configured yet. Continue with Gmail.</p>
-          )}
-          {notice && <p role="status" className="auth-notice auth-success">{notice}</p>}
-          <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={formBusy}>
-            {!finishingSignIn && (
-              <fieldset className="auth-fields" disabled={busy || !authConfigured}>
+
+          <motion.p className="auth-eyebrow" {...itemProps}>{copy.eyebrow}</motion.p>
+          <motion.h1 id="auth-heading" ref={heading} tabIndex="-1" {...itemProps}>{copy.heading}</motion.h1>
+          <motion.p className="auth-intro" {...itemProps}>{introText}</motion.p>
+
+          <motion.div {...itemProps}>
+            {googleOnlyMode ? (
+              <>
+                <button
+                  type="button"
+                  className="auth-google-primary"
+                  disabled={busy || !googleAvailable}
+                  onClick={startGoogleSignIn}
+                  {...hoverHandlers}
+                >
+                  <span className="auth-google-mark-wrap">
+                    <GoogleMark />
+                  </span>
+                  <span className="auth-google-label">{googleBusy ? googlePending : 'Continue with Google'}</span>
+                  <span className="auth-google-trail">
+                    {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" className="auth-cta-arrow" />}
+                  </span>
+                </button>
+                {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
+                {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
+
+                <div className="auth-access-note">
+                  <div className="auth-member-dots" aria-hidden="true">
+                    {memberDotColors.map((tone, idx) => (
+                      <span key={idx} className={`auth-member-dot tone-${tone}`} />
+                    ))}
+                  </div>
+                  <p>Access is limited to 7 linked Gmail accounts. Sign in with the email registered with the group.</p>
+                </div>
+              </>
+            ) : (
+              <>
                 {screen === 'signIn' && (
                   <>
-                    <Field name="username" label="Username" icon="user" autoComplete="username" autoCapitalize="none" spellCheck={false} error={errors.username} actionError={actionError} />
-                    <Field name="password" label="Password" icon="lock" type="password" autoComplete="current-password" error={errors.password} actionError={actionError} />
+                    <button
+                      type="button"
+                      className="auth-google-button"
+                      disabled={busy || !googleAvailable}
+                      onClick={startGoogleSignIn}
+                      {...hoverHandlers}
+                    >
+                      <GoogleMark />
+                      <span>{googleBusy ? googlePending : 'Continue with Google'}</span>
+                      {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+                    </button>
+                    {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
+                    {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
+                    <div className="auth-or" aria-hidden="true">
+                      <i /><span>or sign in with account</span><i />
+                    </div>
                   </>
                 )}
-                {screen === 'recovery' && (
-                  <Field name="email" label="Email address" icon="mail" type="email" autoComplete="email" defaultValue={email} error={errors.email} actionError={actionError} />
-                )}
-                {(verifyingDevice || screen === 'recoveryCode') && (
-                  <Field name="code" label={verifyingDevice ? 'Verification code' : 'Recovery code'} icon="key" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} error={errors.code} actionError={actionError} />
-                )}
-                {screen === 'resetPassword' && (
-                  <Field name="newPassword" label="New password" icon="lock" type="password" autoComplete="new-password" error={errors.newPassword} actionError={actionError} />
-                )}
-              </fieldset>
+
+                {notice && <p role="status" className="auth-notice auth-success">{notice}</p>}
+                <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={formBusy}>
+                  {!finishingSignIn && (
+                    <fieldset className="auth-fields" disabled={busy || !authConfigured}>
+                      {screen === 'signIn' && (
+                        <>
+                          <Field name="username" label="Username" icon="user" autoComplete="username" autoCapitalize="none" spellCheck={false} error={errors.username} actionError={actionError} />
+                          <Field name="password" label="Password" icon="lock" type="password" autoComplete="current-password" error={errors.password} actionError={actionError} />
+                        </>
+                      )}
+                      {screen === 'recovery' && (
+                        <Field name="email" label="Email address" icon="mail" type="email" autoComplete="email" defaultValue={email} error={errors.email} actionError={actionError} />
+                      )}
+                      {(verifyingDevice || screen === 'recoveryCode') && (
+                        <Field name="code" label={verifyingDevice ? 'Verification code' : 'Recovery code'} icon="key" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} error={errors.code} actionError={actionError} />
+                      )}
+                      {screen === 'resetPassword' && (
+                        <Field name="newPassword" label="New password" icon="lock" type="password" autoComplete="new-password" error={errors.newPassword} actionError={actionError} />
+                      )}
+                    </fieldset>
+                  )}
+                  {screen === 'signIn' && (
+                    <button className="auth-link auth-forgot" type="button" disabled={busy || !authConfigured} onClick={() => open('recovery')}>
+                      Forgot password?
+                    </button>
+                  )}
+                  {(screen === 'recoveryCode' || screen === 'resetPassword') && (
+                    <button className="auth-link auth-forgot" type="button" disabled={busy} onClick={() => open('recovery')}>
+                      Request another code
+                    </button>
+                  )}
+                  {verifyingDevice && (
+                    <button className="auth-link auth-forgot" name="resendDeviceCode" type="button" disabled={busy} onClick={resendDeviceCode}>
+                      Request another code
+                    </button>
+                  )}
+                  {actionError && <p className="auth-action-error" id="auth-action-error" role="alert">{actionError}</p>}
+                  <button
+                    className="auth-primary"
+                    name="submitAction"
+                    type="submit"
+                    disabled={busy || !authConfigured}
+                    {...hoverHandlers}
+                  >
+                    {pending || copy.action}
+                    {formBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+                  </button>
+                </form>
+              </>
             )}
-            {screen === 'signIn' && (
-              <button className="auth-link auth-forgot" type="button" disabled={busy || !authConfigured} onClick={() => open('recovery')}>
-                Forgot password?
-              </button>
-            )}
-            {(screen === 'recoveryCode' || screen === 'resetPassword') && (
-              <button className="auth-link auth-forgot" type="button" disabled={busy} onClick={() => open('recovery')}>
-                Request another code
-              </button>
-            )}
-            {verifyingDevice && (
-              <button className="auth-link auth-forgot" name="resendDeviceCode" type="button" disabled={busy} onClick={resendDeviceCode}>
-                Request another code
-              </button>
-            )}
-            {actionError && <p className="auth-action-error" id="auth-action-error" role="alert">{actionError}</p>}
-            <button
-              className="auth-primary"
-              name="submitAction"
-              type="submit"
-              disabled={busy || !authConfigured}
-              onPointerEnter={() => setHovering(true)}
-              onPointerLeave={() => setHovering(false)}
-              onFocus={() => setHovering(true)}
-              onBlur={() => setHovering(false)}
-            >
-              {pending || copy.action}
-              {formBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
-            </button>
-          </form>
-          <span className="sr-only" role="alert" aria-atomic="true">
-            {feedbackFocus?.announcement && <span key={feedbackFocus.attempt}>{feedbackFocus.announcement}</span>}
-          </span>
-          <span className="sr-only" role="status">{pending || googlePending}</span>
+
+            <span className="sr-only" role="alert" aria-atomic="true">
+              {feedbackFocus?.announcement && <span key={feedbackFocus.attempt}>{feedbackFocus.announcement}</span>}
+            </span>
+            <span className="sr-only" role="status">{pending || googlePending}</span>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </AnimatePresence>
     </AuthLayout>
   );
 }

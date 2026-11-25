@@ -564,8 +564,22 @@ export function PlannerApp({
 }) {
   const reduceMotion = useReducedMotion();
   const [showReveal, setShowReveal] = useState(true);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('fish-theme') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
   const [activeTab, setActiveTab] = useState('home');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fish-theme', theme);
+    } catch {
+      // Ignore storage errors in restricted contexts
+    }
+  }, [theme]);
   const [showPollModal, setShowPollModal] = useState(false);
   const didMountTabRef = useRef(false);
 
