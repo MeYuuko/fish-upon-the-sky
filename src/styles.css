@@ -1,69 +1,69 @@
 @font-face {
   font-family: 'DL Calvera';
-  src: url('../fonts/Headings/DL-Calvera-2.otf') format('opentype');
+  src: url('../Fonts/Headings/DL-Calvera-2.otf') format('opentype');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-Light.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-Light.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-Regular.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-RegularItalic.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-RegularItalic.ttf') format('truetype');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-Book.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-Book.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-BookItalic.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-BookItalic.ttf') format('truetype');
   font-weight: 500;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-Bold.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-BoldItalic.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-BoldItalic.ttf') format('truetype');
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-ExtraBold.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-ExtraBold.ttf') format('truetype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NANG Nexa Pro';
-  src: url('../fonts/text/OpenType-TT/NANGNexaPro_Trial-Black.ttf') format('truetype');
+  src: url('../Fonts/text/OpenType-TT/NANGNexaPro_Trial-Black.ttf') format('truetype');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
