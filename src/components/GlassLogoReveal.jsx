@@ -1020,7 +1020,7 @@ export function GlassIconReveal({
 
 const revealEase = [0.22, 1, 0.36, 1];
 
-export default function WelcomeReveal({ memberName, isDemo = false, theme = 'dark', onDone }) {
+export default function WelcomeReveal({ memberName, theme = 'dark', onDone }) {
   const reduceMotion = useReducedMotion();
   const doneRef = useRef(onDone);
   const finishedRef = useRef(false);
@@ -1056,7 +1056,7 @@ export default function WelcomeReveal({ memberName, isDemo = false, theme = 'dar
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: revealEase }}
         >
-          {isDemo ? 'FISH UPON THE SKY · DEMO' : 'FISH UPON THE SKY'}
+          FISH UPON THE SKY
         </motion.span>
 
         <motion.div

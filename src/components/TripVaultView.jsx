@@ -344,7 +344,7 @@ function TripDetailModal({
           id: `nt-${Date.now()}`,
           text,
           author: currentMemberName,
-          createdAt: 'Just now',
+          createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         },
       ],
     }));

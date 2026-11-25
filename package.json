@@ -1,7 +1,7 @@
 {
-  "name": "fish-upon-the-sky-prototype",
+  "name": "fish-upon-the-sky",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/react": "^6.19.4",
+    "@supabase/supabase-js": "^2.119.2",
     "framer-motion": "^14.14.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

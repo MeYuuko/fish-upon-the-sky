@@ -121,6 +121,7 @@ export default function FishProfileEditor({
   const [errorMsg, setErrorMsg] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingSheetPhoto, setUploadingSheetPhoto] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setDraft(buildInitialDraft(member));
@@ -205,8 +206,9 @@ export default function FishProfileEditor({
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setErrorMsg('');
 
     const parsedRoles = draft.rolesText
@@ -269,12 +271,19 @@ export default function FishProfileEditor({
       },
     };
 
-    const result = onSave(patch);
-    if (result && result.ok === false) {
-      setErrorMsg(result.error || 'Không thể lưu thay đổi.');
-      return;
+    setSaving(true);
+    try {
+      const result = await onSave(patch);
+      if (result && result.ok === false) {
+        setErrorMsg(result.error || 'Không thể lưu thay đổi.');
+        return;
+      }
+      onClose();
+    } catch (err) {
+      setErrorMsg(err?.message || 'Không thể lưu thay đổi.');
+    } finally {
+      setSaving(false);
     }
-    onClose();
   };
 
   const activeBook = draft.books[activeBookIdx] || draft.books[0];
@@ -764,11 +773,11 @@ export default function FishProfileEditor({
           </div>
 
           <footer className="fpe-footer">
-            <button type="button" className="button button-secondary" onClick={onClose}>
+            <button type="button" className="button button-secondary" onClick={onClose} disabled={saving}>
               Hủy
             </button>
-            <button type="submit" className="button button-primary">
-              Lưu thay đổi
+            <button type="submit" className="button button-primary" disabled={saving || uploadingPhoto || uploadingSheetPhoto}>
+              {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </footer>
         </form>

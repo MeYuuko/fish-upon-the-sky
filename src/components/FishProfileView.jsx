@@ -1118,9 +1118,9 @@ export default function FishProfileView({
     animate(spotRadius, 0, { duration: 0.45, ease: EASE });
   };
 
-  const handleSaveProfile = (patch) => {
+  const handleSaveProfile = async (patch) => {
     if (!isOwner) return { ok: false, error: 'Chỉ chủ hồ sơ mới được chỉnh sửa.' };
-    const result = onUpdateMember?.(member.id, patch);
+    const result = await onUpdateMember?.(member.id, patch);
     if (!result || result.ok !== false) setSavedToast(true);
     return result;
   };

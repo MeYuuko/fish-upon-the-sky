@@ -1,155 +1,10 @@
-const GMAIL_MAP_KEY = 'futs_gmail_member_map';
-const GMAIL_SESSION_KEY = 'futs_gmail_session';
-
-export const GOOGLE_LOGIN_SCOPES = 'openid email profile';
 export const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
-
-export const allowLocalGmailFallback = Boolean(import.meta.env.DEV);
 
 export class GoogleAuthError extends Error {
   constructor(code, message) {
     super(message);
     this.name = 'GoogleAuthError';
     this.code = code;
-  }
-}
-
-export function normalizeEmail(email) {
-  return (email || '').trim().toLowerCase();
-}
-
-export function isValidGmailAddress(email) {
-  const clean = normalizeEmail(email);
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean);
-}
-
-export function getAllEmailBindings() {
-  try {
-    const raw = window.localStorage.getItem(GMAIL_MAP_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeBindings(map) {
-  try {
-    window.localStorage.setItem(GMAIL_MAP_KEY, JSON.stringify(map));
-  } catch {
-    // Ignore storage quota errors
-  }
-}
-
-export function getBoundMemberIds() {
-  const map = getAllEmailBindings();
-  return new Set(Object.values(map).filter(Boolean));
-}
-
-export function getMemberForIdentity({ sub = '', email = '' }) {
-  const map = getAllEmailBindings();
-  const cleanSub = (sub || '').trim();
-  const cleanEmail = normalizeEmail(email);
-
-  if (cleanSub && map[`sub:${cleanSub}`]) {
-    const memberId = map[`sub:${cleanSub}`];
-    if (cleanEmail && !map[cleanEmail]) {
-      map[cleanEmail] = memberId;
-      writeBindings(map);
-    }
-    return memberId;
-  }
-
-  if (cleanEmail && map[cleanEmail]) {
-    const memberId = map[cleanEmail];
-    if (cleanSub && !map[`sub:${cleanSub}`]) {
-      map[`sub:${cleanSub}`] = memberId;
-      writeBindings(map);
-    }
-    return memberId;
-  }
-
-  return null;
-}
-
-export function getMemberForEmail(email) {
-  return getMemberForIdentity({ email });
-}
-
-export function bindIdentityToMember({ sub = '', email = '' }, memberId) {
-  const cleanEmail = normalizeEmail(email);
-  const cleanSub = (sub || '').trim();
-  if ((!cleanEmail && !cleanSub) || !memberId) {
-    return { ok: false, reason: 'invalid' };
-  }
-
-  const map = getAllEmailBindings();
-  const existingKeysForMember = Object.entries(map)
-    .filter(([, id]) => id === memberId)
-    .map(([key]) => key);
-
-  const ownKeys = new Set([
-    ...(cleanEmail ? [cleanEmail] : []),
-    ...(cleanSub ? [`sub:${cleanSub}`] : []),
-  ]);
-
-  const claimedByOther = existingKeysForMember.some((key) => !ownKeys.has(key));
-  if (claimedByOther) {
-    return { ok: false, reason: 'already_claimed' };
-  }
-
-  if (cleanEmail) map[cleanEmail] = memberId;
-  if (cleanSub) map[`sub:${cleanSub}`] = memberId;
-  writeBindings(map);
-  return { ok: true };
-}
-
-export function bindEmailToMember(email, memberId) {
-  return bindIdentityToMember({ email }, memberId);
-}
-
-export function loadGmailSession() {
-  try {
-    const raw = window.localStorage.getItem(GMAIL_SESSION_KEY);
-    if (!raw) return null;
-    const session = JSON.parse(raw);
-    if (!session || !session.email || !session.memberId) return null;
-    // Never hydrate bearer tokens from localStorage; keep identity metadata only.
-    return {
-      email: normalizeEmail(session.email),
-      sub: session.sub || '',
-      memberId: session.memberId,
-      name: session.name || '',
-      picture: session.picture || '',
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function saveGmailSession(session) {
-  if (!session?.email || !session?.memberId) return;
-  try {
-    // Strip accessToken / expiresAt before persisting to localStorage.
-    const safeSession = {
-      email: normalizeEmail(session.email),
-      sub: session.sub || '',
-      memberId: session.memberId,
-      name: session.name || '',
-      picture: session.picture || '',
-    };
-    window.localStorage.setItem(GMAIL_SESSION_KEY, JSON.stringify(safeSession));
-  } catch {
-    // Ignore storage quota errors
-  }
-}
-
-export function clearGmailSession() {
-  try {
-    window.localStorage.removeItem(GMAIL_SESSION_KEY);
-  } catch {
-    // Ignore
   }
 }
 
@@ -203,7 +58,7 @@ export function loadGisScript() {
 
 export async function requestGoogleOAuthToken({
   clientId,
-  scope = GOOGLE_LOGIN_SCOPES,
+  scope = GOOGLE_CALENDAR_SCOPE,
   prompt = '',
   includeGrantedScopes = true,
 }) {
@@ -299,35 +154,6 @@ export function revokeGoogleToken(accessToken) {
   } catch {
     // Ignore revoke errors on cleanup
   }
-}
-
-export async function fetchGoogleUserProfile(accessToken) {
-  if (navigator.onLine === false) {
-    throw new GoogleAuthError('offline', 'Lost network connection while reading your Google profile.');
-  }
-  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (res.status === 401 || res.status === 403) {
-    throw new GoogleAuthError('auth_revoked', 'Google sign-in session is invalid or expired.');
-  }
-  if (!res.ok) {
-    throw new GoogleAuthError('api_error', 'Could not read your Google profile.');
-  }
-  const data = await res.json();
-  if (data.email_verified !== true) {
-    throw new GoogleAuthError(
-      'unverified_email',
-      'Your Google email address is not verified. Verify it in Google Account settings first.',
-    );
-  }
-  return {
-    sub: data.sub || '',
-    email: normalizeEmail(data.email),
-    emailVerified: true,
-    name: data.name || '',
-    picture: data.picture || '',
-  };
 }
 
 function toLocalDateKey(isoOrDate) {

@@ -1,18 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import logo from '../../Logo/Logo.svg';
-import { googleClientId, hasGoogleOAuth } from './auth-config.js';
-import {
-  GOOGLE_LOGIN_SCOPES,
-  allowLocalGmailFallback,
-  bindIdentityToMember,
-  fetchGoogleUserProfile,
-  getBoundMemberIds,
-  getMemberForIdentity,
-  isValidGmailAddress,
-  normalizeEmail,
-  requestGoogleOAuthToken,
-} from './google-auth.js';
 
 const ringSizes = [300, 372, 452, 542, 644, 758, 884, 1000];
 
@@ -83,21 +71,6 @@ const screens = {
     action: 'Save new password',
     pending: 'Saving new password…',
     error: 'The password could not be saved. Try a different password or request another code.',
-  },
-  gmail: {
-    heading: 'Sign in with Gmail',
-    intro: 'Enter your Gmail once — we’ll remember which member you are for every next visit.',
-    action: 'Continue with Gmail',
-    pending: 'Connecting Gmail…',
-    error: 'Enter a valid Gmail address (for example, name@gmail.com).',
-  },
-  pickMember: {
-    heading: 'Who are you?',
-    intro: 'Link this Gmail to your group profile once. We won’t ask again next time.',
-  },
-  demo: {
-    heading: 'Choose a member',
-    intro: 'Pick a name to explore the planner with sample data.',
   },
 };
 
@@ -332,7 +305,7 @@ function Field({ name, label, icon, type = 'text', autoComplete, error, actionEr
 }
 
 export default function AuthEntry({
-  authConfigured, members, onEnterDemo, onEnterGmail, demoButtonRef, onSignIn, onSendDeviceCode, onVerifyDeviceCode,
+  authConfigured, googleAvailable = false, onGoogleSignIn, onSignIn, onSendDeviceCode, onVerifyDeviceCode,
   onStartRecovery, onVerifyRecoveryCode, onSubmitRecoveryPassword, onFinalize,
 }) {
   const [screen, setScreen] = useState('signIn');
@@ -340,8 +313,6 @@ export default function AuthEntry({
   const [pending, setPending] = useState('');
   const [googlePending, setGooglePending] = useState('');
   const [email, setEmail] = useState('');
-  const [pendingGmail, setPendingGmail] = useState(null);
-  const [gmailValue, setGmailValue] = useState('');
   const [errors, setErrors] = useState({});
   const [actionError, setActionError] = useState('');
   const [googleError, setGoogleError] = useState('');
@@ -376,8 +347,7 @@ export default function AuthEntry({
     setGoogleError('');
     setGoogleNotice('');
     setNotice('');
-    if (next === 'signIn' || next === 'demo') setEmail('');
-    if (next === 'signIn') setPendingGmail(null);
+    if (next === 'signIn') setEmail('');
     setScreen(next);
   }
 
@@ -387,86 +357,17 @@ export default function AuthEntry({
     setGoogleError('');
     setGoogleNotice('');
     setErrors({});
-    if (!hasGoogleOAuth) {
-      if (!allowLocalGmailFallback) {
-        setGoogleError('Google OAuth Client ID is not configured for production.');
-        return;
-      }
-      open('gmail');
+    if (!googleAvailable) {
+      setGoogleError('Google sign-in isn’t configured.');
       return;
     }
     setGooglePending('Opening Google sign-in…');
     try {
-      const token = await requestGoogleOAuthToken({
-        clientId: googleClientId,
-        scope: GOOGLE_LOGIN_SCOPES,
-        prompt: 'select_account',
-      });
-      const profile = await fetchGoogleUserProfile(token.accessToken);
-      const existingMemberId = getMemberForIdentity({ sub: profile.sub, email: profile.email });
-      const validExisting = members.some((m) => m.id === existingMemberId);
-      const sessionPayload = {
-        sub: profile.sub,
-        email: profile.email,
-        name: profile.name,
-        picture: profile.picture,
-        accessToken: token.accessToken,
-        expiresAt: token.expiresAt,
-      };
-      if (validExisting) {
-        onEnterGmail?.({ ...sessionPayload, memberId: existingMemberId });
-        return;
-      }
-      setPendingGmail(sessionPayload);
-      open('pickMember');
+      await onGoogleSignIn?.();
     } catch (err) {
-      if (err?.code === 'cancelled') {
-        setGoogleNotice('Google sign-in was cancelled. You can try again anytime.');
-      } else {
-        setGoogleError(err?.message || 'Google sign-in could not be completed. Please try again.');
-      }
-    } finally {
+      setGoogleError(err?.message || 'Google sign-in could not be completed. Please try again.');
       setGooglePending('');
     }
-  }
-
-  function submitGmailEmail(event) {
-    event.preventDefault();
-    if (busy) return;
-    const clean = normalizeEmail(gmailValue);
-    if (!isValidGmailAddress(clean)) {
-      setErrors({ gmailEmail: screens.gmail.error });
-      return;
-    }
-    setErrors({});
-    setActionError('');
-    setGoogleError('');
-    const existingMemberId = getMemberForIdentity({ email: clean });
-    const validExisting = members.some((m) => m.id === existingMemberId);
-    const sessionPayload = {
-      sub: '',
-      email: clean,
-      name: '',
-      picture: '',
-      accessToken: '',
-      expiresAt: 0,
-    };
-    if (validExisting) {
-      onEnterGmail?.({ ...sessionPayload, memberId: existingMemberId });
-      return;
-    }
-    setPendingGmail(sessionPayload);
-    open('pickMember');
-  }
-
-  function bindAndEnterMember(memberId) {
-    if (!pendingGmail?.email) return;
-    const res = bindIdentityToMember({ sub: pendingGmail.sub, email: pendingGmail.email }, memberId);
-    if (!res.ok) {
-      setGoogleError('That member profile is already linked to another Gmail.');
-      return;
-    }
-    onEnterGmail?.({ ...pendingGmail, memberId });
   }
 
   function showActionError(message, focus = 'submitAction') {
@@ -598,177 +499,87 @@ export default function AuthEntry({
         <motion.h1 id="auth-heading" ref={heading} tabIndex="-1" {...itemProps}>{copy.heading}</motion.h1>
         <motion.p className="auth-intro" {...itemProps}>{copy.intro}</motion.p>
 
-        {screen === 'demo' ? (
-          <motion.div className="auth-members" role="group" aria-label="Demo members" {...itemProps}>
-            {members.map(member => (
-              <button className="auth-member" key={member.id} type="button" onClick={() => onEnterDemo(member.id)}>
-                <span>{member.name}</span>
-                <AuthIcon name="arrow" />
-              </button>
-            ))}
-          </motion.div>
-        ) : screen === 'pickMember' ? (
-          <motion.div {...itemProps}>
-            {pendingGmail?.email && (
-              <div className="auth-gmail-pill">
+        <motion.div {...itemProps}>
+          {screen === 'signIn' && (
+            <>
+              <button
+                type="button"
+                className="auth-google-button"
+                disabled={busy || !googleAvailable}
+                onClick={startGoogleSignIn}
+                onPointerEnter={() => setHovering(true)}
+                onPointerLeave={() => setHovering(false)}
+              >
                 <GoogleMark />
-                <span>{pendingGmail.email}</span>
+                <span>{googleBusy ? googlePending : 'Continue with Gmail'}</span>
+                {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+              </button>
+              {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
+              {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
+              <div className="auth-or" aria-hidden="true">
+                <i /><span>or sign in with account</span><i />
               </div>
-            )}
-            {googleError && <p className="auth-action-error auth-google-error" role="alert">{googleError}</p>}
-            <div className="auth-members" role="group" aria-label="Link Gmail to group member">
-              {(() => {
-                const claimedIds = getBoundMemberIds();
-                return members.map(member => {
-                  const taken = claimedIds.has(member.id);
-                  return (
-                    <button
-                      className="auth-member"
-                      key={member.id}
-                      type="button"
-                      disabled={taken}
-                      aria-disabled={taken || undefined}
-                      title={taken ? 'Already linked to another Gmail' : `Link as ${member.name}`}
-                      onClick={() => bindAndEnterMember(member.id)}
-                    >
-                      <span>{member.name}</span>
-                      {taken ? <span className="auth-member-linked">Taken</span> : <AuthIcon name="arrow" />}
-                    </button>
-                  );
-                });
-              })()}
-            </div>
-          </motion.div>
-        ) : screen === 'gmail' ? (
-          <motion.div {...itemProps}>
-            <form noValidate onSubmit={submitGmailEmail} aria-busy={busy}>
-              <fieldset className="auth-fields" disabled={busy}>
-                <Field
-                  name="gmailEmail"
-                  label="Gmail address"
-                  icon="mail"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="name@gmail.com"
-                  value={gmailValue}
-                  onChange={(event) => {
-                    setGmailValue(event.target.value);
-                    if (errors.gmailEmail) setErrors({});
-                  }}
-                  error={errors.gmailEmail}
-                />
+            </>
+          )}
+          {!authConfigured && (
+            <p className="auth-notice">Password sign-in isn’t configured yet. Continue with Gmail.</p>
+          )}
+          {notice && <p role="status" className="auth-notice auth-success">{notice}</p>}
+          <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={formBusy}>
+            {!finishingSignIn && (
+              <fieldset className="auth-fields" disabled={busy || !authConfigured}>
+                {screen === 'signIn' && (
+                  <>
+                    <Field name="username" label="Username" icon="user" autoComplete="username" autoCapitalize="none" spellCheck={false} error={errors.username} actionError={actionError} />
+                    <Field name="password" label="Password" icon="lock" type="password" autoComplete="current-password" error={errors.password} actionError={actionError} />
+                  </>
+                )}
+                {screen === 'recovery' && (
+                  <Field name="email" label="Email address" icon="mail" type="email" autoComplete="email" defaultValue={email} error={errors.email} actionError={actionError} />
+                )}
+                {(verifyingDevice || screen === 'recoveryCode') && (
+                  <Field name="code" label={verifyingDevice ? 'Verification code' : 'Recovery code'} icon="key" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} error={errors.code} actionError={actionError} />
+                )}
+                {screen === 'resetPassword' && (
+                  <Field name="newPassword" label="New password" icon="lock" type="password" autoComplete="new-password" error={errors.newPassword} actionError={actionError} />
+                )}
               </fieldset>
-              <button
-                className="auth-primary"
-                type="submit"
-                disabled={busy}
-                onPointerEnter={() => setHovering(true)}
-                onPointerLeave={() => setHovering(false)}
-              >
-                {copy.action}
-                <AuthIcon name="arrow" />
-              </button>
-            </form>
-          </motion.div>
-        ) : (
-          <motion.div {...itemProps}>
+            )}
             {screen === 'signIn' && (
-              <>
-                <button
-                  type="button"
-                  className="auth-google-button"
-                  disabled={busy || (!hasGoogleOAuth && !allowLocalGmailFallback)}
-                  onClick={startGoogleSignIn}
-                  onPointerEnter={() => setHovering(true)}
-                  onPointerLeave={() => setHovering(false)}
-                >
-                  <GoogleMark />
-                  <span>{googleBusy ? googlePending : 'Continue with Gmail'}</span>
-                  {googleBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
-                </button>
-                {googleNotice && <p role="status" className="auth-google-notice">{googleNotice}</p>}
-                {googleError && <p role="alert" className="auth-action-error auth-google-error">{googleError}</p>}
-                <div className="auth-or" aria-hidden="true">
-                  <i /><span>or sign in with account</span><i />
-                </div>
-              </>
-            )}
-            {!authConfigured && (
-              <p className="auth-notice">Password sign-in isn’t configured yet. Continue with Gmail or explore the demo.</p>
-            )}
-            {notice && <p role="status" className="auth-notice auth-success">{notice}</p>}
-            <form ref={formRef} noValidate onSubmit={submit} onChange={clearError} aria-busy={formBusy}>
-              {!finishingSignIn && (
-                <fieldset className="auth-fields" disabled={busy || !authConfigured}>
-                  {screen === 'signIn' && (
-                    <>
-                      <Field name="username" label="Username" icon="user" autoComplete="username" autoCapitalize="none" spellCheck={false} error={errors.username} actionError={actionError} />
-                      <Field name="password" label="Password" icon="lock" type="password" autoComplete="current-password" error={errors.password} actionError={actionError} />
-                    </>
-                  )}
-                  {screen === 'recovery' && (
-                    <Field name="email" label="Email address" icon="mail" type="email" autoComplete="email" defaultValue={email} error={errors.email} actionError={actionError} />
-                  )}
-                  {(verifyingDevice || screen === 'recoveryCode') && (
-                    <Field name="code" label={verifyingDevice ? 'Verification code' : 'Recovery code'} icon="key" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} error={errors.code} actionError={actionError} />
-                  )}
-                  {screen === 'resetPassword' && (
-                    <Field name="newPassword" label="New password" icon="lock" type="password" autoComplete="new-password" error={errors.newPassword} actionError={actionError} />
-                  )}
-                </fieldset>
-              )}
-              {screen === 'signIn' && (
-                <button className="auth-link auth-forgot" type="button" disabled={busy || !authConfigured} onClick={() => open('recovery')}>
-                  Forgot password?
-                </button>
-              )}
-              {(screen === 'recoveryCode' || screen === 'resetPassword') && (
-                <button className="auth-link auth-forgot" type="button" disabled={busy} onClick={() => open('recovery')}>
-                  Request another code
-                </button>
-              )}
-              {verifyingDevice && (
-                <button className="auth-link auth-forgot" name="resendDeviceCode" type="button" disabled={busy} onClick={resendDeviceCode}>
-                  Request another code
-                </button>
-              )}
-              {actionError && <p className="auth-action-error" id="auth-action-error" role="alert">{actionError}</p>}
-              <button
-                className="auth-primary"
-                name="submitAction"
-                type="submit"
-                disabled={busy || !authConfigured}
-                onPointerEnter={() => setHovering(true)}
-                onPointerLeave={() => setHovering(false)}
-                onFocus={() => setHovering(true)}
-                onBlur={() => setHovering(false)}
-              >
-                {pending || copy.action}
-                {formBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+              <button className="auth-link auth-forgot" type="button" disabled={busy || !authConfigured} onClick={() => open('recovery')}>
+                Forgot password?
               </button>
-            </form>
-            <span className="sr-only" role="alert" aria-atomic="true">
-              {feedbackFocus?.announcement && <span key={feedbackFocus.attempt}>{feedbackFocus.announcement}</span>}
-            </span>
-            <span className="sr-only" role="status">{pending || googlePending}</span>
-            {screen === 'signIn' && (
-              <>
-                <div className="auth-or" aria-hidden="true">
-                  <i /><span>or</span><i />
-                </div>
-                <button
-                  ref={demoButtonRef}
-                  type="button"
-                  className="auth-demo-button"
-                  disabled={busy}
-                  onClick={() => open('demo')}
-                >
-                  Explore demo with sample data <AuthIcon name="arrow" />
-                </button>
-              </>
             )}
-          </motion.div>
-        )}
+            {(screen === 'recoveryCode' || screen === 'resetPassword') && (
+              <button className="auth-link auth-forgot" type="button" disabled={busy} onClick={() => open('recovery')}>
+                Request another code
+              </button>
+            )}
+            {verifyingDevice && (
+              <button className="auth-link auth-forgot" name="resendDeviceCode" type="button" disabled={busy} onClick={resendDeviceCode}>
+                Request another code
+              </button>
+            )}
+            {actionError && <p className="auth-action-error" id="auth-action-error" role="alert">{actionError}</p>}
+            <button
+              className="auth-primary"
+              name="submitAction"
+              type="submit"
+              disabled={busy || !authConfigured}
+              onPointerEnter={() => setHovering(true)}
+              onPointerLeave={() => setHovering(false)}
+              onFocus={() => setHovering(true)}
+              onBlur={() => setHovering(false)}
+            >
+              {pending || copy.action}
+              {formBusy ? <span className="auth-loader" aria-hidden="true" /> : <AuthIcon name="arrow" />}
+            </button>
+          </form>
+          <span className="sr-only" role="alert" aria-atomic="true">
+            {feedbackFocus?.announcement && <span key={feedbackFocus.attempt}>{feedbackFocus.announcement}</span>}
+          </span>
+          <span className="sr-only" role="status">{pending || googlePending}</span>
+        </motion.div>
       </motion.div>
     </AuthLayout>
   );

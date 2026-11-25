@@ -1,9 +1,10 @@
-import { Fragment, useRef, useState } from 'react';
-import { ClerkProvider, useAuth, useClerk, useSignIn, useUser } from '@clerk/react';
+import { Fragment, useMemo, useRef, useState } from 'react';
+import { ClerkProvider, useAuth, useClerk, useSession, useSignIn, useUser } from '@clerk/react';
 import { ClerkOfflineError, isClerkRuntimeError } from '@clerk/react/errors';
+import { createClerkSupabase } from '../data/supabaseClient.js';
 import AuthEntry, { AuthLayout } from './AuthEntry.jsx';
 
-export function SessionExitButton({ onExit, demo = false }) {
+export function SessionExitButton({ onExit }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -22,7 +23,7 @@ export function SessionExitButton({ onExit, demo = false }) {
 
   return <div className="session-exit">
     <button type="button" className="quiet-button" aria-disabled={busy || undefined} onClick={exit}>
-      {demo ? 'Exit demo' : busy ? 'Signing out…' : 'Sign out'}
+      {busy ? 'Signing out…' : 'Sign out'}
     </button>
     {failed && <span role="alert">Couldn’t sign out. Please try again.</span>}
   </div>;
@@ -41,7 +42,7 @@ function requireRecoveryConnection() {
   if (navigator.onLine === false) throw new ClerkOfflineError('Browser offline');
 }
 
-function SignInEntry({ members, onEnterDemo, onEnterGmail, demoButtonRef, onPasswordReset }) {
+function SignInEntry({ googleAvailable, onGoogleSignIn, onPasswordReset }) {
   const { signIn } = useSignIn();
   const recoveryAttempt = useRef(null);
 
@@ -113,38 +114,44 @@ function SignInEntry({ members, onEnterDemo, onEnterGmail, demoButtonRef, onPass
     return { needsDeviceVerification: signIn.status === 'needs_client_trust' };
   }
 
-  return <AuthEntry authConfigured members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef}
+  return <AuthEntry authConfigured googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn}
     onSignIn={signInWithPassword} onSendDeviceCode={sendDeviceCode} onVerifyDeviceCode={verifyDeviceCode}
     onStartRecovery={startRecovery} onVerifyRecoveryCode={verifyRecoveryCode}
     onSubmitRecoveryPassword={submitRecoveryPassword} onFinalize={finalize} />;
 }
 
-function SessionGate({ members, onEnterDemo, onEnterGmail, demoButtonRef, renderPlanner }) {
+function SessionGate({ googleAvailable, onGoogleSignIn, renderPlanner }) {
   const auth = useAuth();
   const { isLoaded, user } = useUser();
+  const { session } = useSession();
   const clerk = useClerk();
   const [passwordResetSessionId, setPasswordResetSessionId] = useState(null);
   const signOut = () => clerk.signOut({ redirectUrl: window.location.pathname });
-  const sessionPending = !auth.isLoaded || !isLoaded || (auth.isSignedIn && user?.id !== auth.userId);
+  const sessionPending = !auth.isLoaded || !isLoaded || (auth.isSignedIn && (!session || user?.id !== auth.userId));
   const passwordResetNotice = !sessionPending && auth.isSignedIn && auth.sessionId === passwordResetSessionId
     ? 'Your password has been reset.' : '';
+
+  const client = useMemo(
+    () => (session ? createClerkSupabase(() => session.getToken()) : null),
+    [session],
+  );
 
   let content;
   if (sessionPending) {
     content = <AuthStatus heading="Opening your planner"><p role="status">Checking your sign-in…</p></AuthStatus>;
   } else if (!auth.isSignedIn) {
-    content = <SignInEntry members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef}
+    content = <SignInEntry googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn}
       onPasswordReset={setPasswordResetSessionId} />;
   } else {
-    const memberId = user?.publicMetadata?.memberId;
-    const member = members.find(person => person.id === memberId);
-    content = member ? <Fragment key={JSON.stringify([auth.sessionId, member.id])}>
-      {renderPlanner({ currentMemberId: member.id, identityMode: 'authenticated', onSignOut: signOut, passwordResetNotice })}
-    </Fragment> : <AuthStatus heading="Account setup needed">
-      {passwordResetNotice && <p className="auth-notice auth-success">{passwordResetNotice}</p>}
-      <p className="auth-intro">Ask the group organizer to link your account to your member profile.</p>
-      <SessionExitButton onExit={signOut} />
-    </AuthStatus>;
+    content = <Fragment key={auth.sessionId}>
+      {renderPlanner({
+        client,
+        identityMode: 'authenticated',
+        currentUserEmail: user?.primaryEmailAddress?.emailAddress || '',
+        onSignOut: signOut,
+        passwordResetNotice,
+      })}
+    </Fragment>;
   }
 
   return <>
@@ -153,9 +160,11 @@ function SessionGate({ members, onEnterDemo, onEnterGmail, demoButtonRef, render
   </>;
 }
 
-export default function ClerkAuthRoot({ publishableKey, members, onEnterDemo, onEnterGmail, demoButtonRef, renderPlanner }) {
-  if (!publishableKey) return <AuthEntry authConfigured={false} members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef} />;
+export default function ClerkAuthRoot({ publishableKey, googleAvailable = false, onGoogleSignIn, renderPlanner }) {
+  if (!publishableKey) {
+    return <AuthEntry authConfigured={false} googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} />;
+  }
   return <ClerkProvider publishableKey={publishableKey}>
-    <SessionGate members={members} onEnterDemo={onEnterDemo} onEnterGmail={onEnterGmail} demoButtonRef={demoButtonRef} renderPlanner={renderPlanner} />
+    <SessionGate googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} renderPlanner={renderPlanner} />
   </ClerkProvider>;
 }

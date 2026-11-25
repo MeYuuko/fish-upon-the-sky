@@ -1,26 +1,31 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ClerkAuthRoot, { SessionExitButton } from './auth/ClerkAuthRoot.jsx';
-import { clerkPublishableKey, googleClientId, hasGoogleOAuth } from './auth/auth-config.js';
+import { AuthLayout } from './auth/AuthEntry.jsx';
+import {
+  clerkPublishableKey,
+  googleClientId,
+  hasGoogleOAuth,
+  hasSupabaseConfiguration,
+} from './auth/auth-config.js';
 import {
   GOOGLE_CALENDAR_SCOPE,
   buildGoogleCalendarEventUrl,
-  clearGmailSession,
   createGoogleCalendarEvent,
   downloadGroupIcsFile,
   fetchGoogleCalendarEvents,
-  loadGmailSession,
   requestGoogleOAuthToken,
   revokeGoogleToken,
-  saveGmailSession,
 } from './auth/google-auth.js';
+import { fetchCurrentMemberId, getGoogleSupabase } from './data/supabaseClient.js';
+import { todayKey } from './data/groupApi.js';
+import { useGroupData } from './data/useGroupData.js';
 import WelcomeReveal from './components/GlassLogoReveal.jsx';
 import MyTasksHero from './components/MyTasksHero.jsx';
 import TripVaultView from './components/TripVaultView.jsx';
 import BeamWordmarkFooter from './components/BeamWordmarkFooter.jsx';
 import LiquidGlassTabBar from './components/LiquidGlassTabBar.jsx';
 import FishesView from './components/FishesView.jsx';
-import { loadMemberProfiles, saveMemberProfiles } from './data/fishProfiles.js';
 import logo from '../Logo/Logo.svg';
 
 const people = [
@@ -31,95 +36,6 @@ const people = [
   { id: 'quoc-anh', name: 'Quốc Anh', color: 'cream' },
   { id: 'thu', name: 'Thư', color: 'lemon' },
   { id: 'thien', name: 'Thiên', color: 'blue' },
-];
-
-const initialPolls = [
-  {
-    id: 'market-stroll',
-    title: 'Market stroll & tea',
-    detail: 'A slow afternoon, good snacks, no rushing.',
-    status: 'Voting',
-    deadline: 'Fri, Nov 27',
-    placeOptions: ['Old Quarter', 'West Lake', 'Let the group pick'],
-    budgetOptions: ['Under ₫300k', '₫300k–₫500k', 'Keep it flexible'],
-    options: [
-      { id: 'dec-5', label: 'Sat, Dec 5 · 4:00 PM' },
-      { id: 'dec-6', label: 'Sun, Dec 6 · 3:00 PM' },
-      { id: 'dec-12', label: 'Sat, Dec 12 · 4:00 PM' },
-    ],
-    votes: { bao: ['dec-5'], hang: ['dec-5', 'dec-6'], diem: ['dec-6'], quynh: ['dec-5'], 'quoc-anh': [], thu: ['dec-12'], thien: [] },
-    placeVotes: { bao: ['Old Quarter'], hang: ['Old Quarter'], diem: ['West Lake'], quynh: ['Old Quarter'], 'quoc-anh': [], thu: ['Let the group pick'], thien: [] },
-    budgetVotes: { bao: ['Under ₫300k'], hang: ['Under ₫300k'], diem: ['₫300k–₫500k'], quynh: ['Under ₫300k'], 'quoc-anh': [], thu: ['Keep it flexible'], thien: [] },
-  },
-];
-
-const initialOutings = [
-  {
-    id: 'river-picnic',
-    title: 'Riverside picnic',
-    date: 'Sat, Nov 14',
-    place: 'West Lake',
-    status: 'Done',
-    sheetUrl: '',
-    albumUrl: '',
-    photos: [
-      { id: 'rp-ph-1', caption: 'Golden hour by West Lake', addedBy: 'Hằng', art: 'waterfall' },
-    ],
-    places: [
-      { id: 'rp-pl-1', name: 'West Lake Lotus Lawn', category: 'Spot', mapUrl: 'https://maps.google.com/?q=West+Lake+Hanoi', addedBy: 'Bảo' },
-    ],
-    notes: [
-      { id: 'rp-nt-1', text: 'Next time bring two picnic blankets and extra cold brew.', author: 'Bảo', createdAt: 'Nov 14' },
-    ],
-  },
-  {
-    id: 'market-stroll',
-    title: 'Market stroll & tea',
-    date: 'Vote closes Nov 27',
-    place: 'Choosing together',
-    status: 'Planning',
-    sheetUrl: '',
-    albumUrl: '',
-    photos: [],
-    places: [
-      { id: 'ms-pl-1', name: 'Old Quarter Tea Room', category: 'Food', mapUrl: '', addedBy: 'Diễm' },
-    ],
-    notes: [],
-  },
-  {
-    id: 'winter-day',
-    title: 'A little winter day out',
-    date: 'Date to be decided',
-    place: 'Open for ideas',
-    status: 'Idea',
-    sheetUrl: '',
-    albumUrl: '',
-    photos: [],
-    places: [],
-    notes: [
-      { id: 'wd-nt-1', text: 'Hotpot somewhere cozy if it drops below 18°C.', author: 'Quỳnh', createdAt: 'Idea' },
-    ],
-  },
-  {
-    id: 'autumn-da-lat',
-    title: 'Autumn Da Lat escape',
-    date: 'Oct 18–20',
-    place: 'Da Lat',
-    status: 'Done',
-    sheetUrl: '',
-    albumUrl: '',
-    photos: [
-      { id: 'dl-ph-1', caption: 'Pine hill sunrise', addedBy: 'Thư', art: 'citrus' },
-      { id: 'dl-ph-2', caption: 'Night market soy milk stop', addedBy: 'Quốc Anh', art: 'cobalt' },
-    ],
-    places: [
-      { id: 'dl-pl-1', name: 'Thien Phuc Duc Hill', category: 'Spot', mapUrl: 'https://maps.google.com/?q=Thien+Phuc+Duc+Da+Lat', addedBy: 'Thiên' },
-      { id: 'dl-pl-2', name: 'Tui Mo To Coffee', category: 'Food', mapUrl: '', addedBy: 'Hằng' },
-    ],
-    notes: [
-      { id: 'dl-nt-1', text: '4:45 AM alarm was worth it — whole valley under mist.', author: 'Thư', createdAt: 'Oct 20' },
-    ],
-  },
 ];
 
 const navItems = [
@@ -154,23 +70,12 @@ function Icon({ name, size = 20, strokeWidth = 1.8 }) {
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" {...common}>{paths[name]}</svg>;
 }
 
-function HudCross({ className = '' }) {
-  return <span className={`hud-cross${className ? ' ' + className : ''}`} aria-hidden="true">+</span>;
-}
-
 function DotRule() {
   return <span className="dot-rule" aria-hidden="true"><i /><span /><i /></span>;
 }
 
 function Avatar({ person, small = false }) {
   return <span className={`avatar avatar-${person.color}${small ? ' avatar-small' : ''}`} title={person.name}>{person.name.slice(0, 1)}</span>;
-}
-
-function AvatarStack({ count = people.length }) {
-  return <div className="avatar-stack" aria-label={`${count} group members`}>
-    {people.slice(0, 5).map((person) => <Avatar key={person.id} person={person} small />)}
-    <span className="avatar-more">+{Math.max(0, count - 5)}</span>
-  </div>;
 }
 
 function SectionHeading({ kicker, title, action, onAction }) {
@@ -181,17 +86,18 @@ function SectionHeading({ kicker, title, action, onAction }) {
 }
 
 function VoteCard({ poll, currentMemberId, onToggleVote }) {
+  const isClosed = poll.status === 'Closed';
   const memberVotes = poll.votes?.[currentMemberId] ?? [];
   const responded = Object.values(poll.votes ?? {}).filter((votes) => votes.length > 0).length;
   const renderIdeaGroup = (label, options, voteKey) => options?.length > 0 && <div className="vote-idea-group"><span className="vote-idea-label">{label}</span><div className="vote-chip-list">{options.map((option) => {
     const selected = (poll[voteKey]?.[currentMemberId] ?? []).includes(option);
     const count = Object.values(poll[voteKey] ?? {}).filter((votes) => votes.includes(option)).length;
-    return <button type="button" key={option} className={`vote-chip${selected ? ' is-selected' : ''}`} aria-pressed={selected} onClick={() => onToggleVote(poll.id, option, voteKey)}>{option}<strong>{count}</strong></button>;
+    return <button type="button" key={option} className={`vote-chip${selected ? ' is-selected' : ''}`} aria-pressed={selected} disabled={isClosed} onClick={() => onToggleVote(poll.id, option, voteKey)}>{option}<strong>{count}</strong></button>;
   })}</div></div>;
   return <article className="vote-card">
     <div className="vote-card-top">
-      <span className="status status-voting"><span /> Vote open</span>
-      <span className="deadline"><Icon name="clock" size={15} /> Closes {poll.deadline}</span>
+      <span className={`status ${isClosed ? 'status-closed' : 'status-voting'}`}><span /> {isClosed ? 'Vote closed' : 'Vote open'}</span>
+      <span className="deadline"><Icon name="clock" size={15} /> {isClosed ? 'Closed' : 'Closes'} {poll.deadline}</span>
     </div>
     <h3>{poll.title}</h3>
     <p>{poll.detail}</p>
@@ -199,7 +105,7 @@ function VoteCard({ poll, currentMemberId, onToggleVote }) {
       {poll.options.map((option) => {
         const voters = Object.values(poll.votes ?? {}).filter((votes) => votes.includes(option.id)).length;
         const selected = memberVotes.includes(option.id);
-        return <button key={option.id} className={`vote-option${selected ? ' is-selected' : ''}`} aria-pressed={selected} onClick={() => onToggleVote(poll.id, option.id, 'votes')}>
+        return <button key={option.id} type="button" className={`vote-option${selected ? ' is-selected' : ''}`} aria-pressed={selected} disabled={isClosed} onClick={() => onToggleVote(poll.id, option.id, 'votes')}>
           <span className="vote-check"><Icon name="check" size={14} /></span>
           <span>{option.label}</span>
           <strong>{voters}</strong>
@@ -208,17 +114,26 @@ function VoteCard({ poll, currentMemberId, onToggleVote }) {
     </div>
     {renderIdeaGroup('Place ideas', poll.placeOptions, 'placeVotes')}
     {renderIdeaGroup('Budget ideas', poll.budgetOptions, 'budgetVotes')}
-    <div className="vote-foot"><span>{responded} of 7 members have responded</span><span>Reminder before the deadline</span></div>
+    <div className="vote-foot"><span>{responded} of {people.length} members have responded</span><span>{isClosed ? 'Voting has closed' : 'Reminder before the deadline'}</span></div>
   </article>;
 }
 
 function NewPollModal({ onClose, onCreate, reduceMotion }) {
-  const [title, setTitle] = useState('A little afternoon together');
+  const today = todayKey();
+  const now = new Date();
+  const defaultDeadlineDate = (() => {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  const [title, setTitle] = useState('');
   const [monthOffset, setMonthOffset] = useState(0);
-  const [selectedDates, setSelectedDates] = useState(['2026-12-05']);
-  const [placeOptions, setPlaceOptions] = useState('Old Quarter\nWest Lake\nLet the group pick');
-  const [budgetOptions, setBudgetOptions] = useState('Under ₫300k\n₫300k–₫500k\nKeep it flexible');
-  const monthStart = new Date(2026, 11 + monthOffset, 1);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [deadlineDate, setDeadlineDate] = useState(defaultDeadlineDate);
+  const [placeOptions, setPlaceOptions] = useState('');
+  const [budgetOptions, setBudgetOptions] = useState('');
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
   const year = monthStart.getFullYear();
   const month = monthStart.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -230,20 +145,25 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
     return { id, day, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · 4:00 PM` };
   });
   const toggleDate = (id) => setSelectedDates((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+
   const submit = (event) => {
     event.preventDefault();
-    if (!title.trim() || selectedDates.length === 0) return;
-    const selectedOptions = selectedDates.map((id) => {
+    if (!title.trim() || selectedDates.length === 0 || !deadlineDate) return;
+    const selectedOptions = [...selectedDates].sort().map((id) => {
       const [selectedYear, selectedMonth, selectedDay] = id.split('-').map(Number);
       const date = new Date(selectedYear, selectedMonth - 1, selectedDay);
       return { id, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · 4:00 PM` };
     });
+    const [dlYear, dlMonth, dlDay] = deadlineDate.split('-').map(Number);
+    const dlObj = new Date(dlYear, dlMonth - 1, dlDay);
+    const deadlineLabel = dlObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     onCreate({
-      id: `poll-${Date.now()}`,
+      id: `poll-${crypto.randomUUID()}`,
       title: title.trim(),
       detail: 'Pick the time that works best for you.',
-      status: 'Voting',
-      deadline: 'Nov 27',
+      status: deadlineDate < today ? 'Closed' : 'Voting',
+      deadline: deadlineLabel,
+      deadlineDate,
       options: selectedOptions,
       placeOptions: placeOptions.split('\n').map((item) => item.trim()).filter(Boolean),
       budgetOptions: budgetOptions.split('\n').map((item) => item.trim()).filter(Boolean),
@@ -256,7 +176,9 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
     <motion.form className="poll-modal" onSubmit={submit} initial={{ opacity: 0, y: reduceMotion ? 0 : 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: reduceMotion ? 0 : 12, scale: 0.98 }} transition={{ duration: 0.22 }}>
       <div className="modal-heading"><div><span className="eyebrow">Start with the calendar</span><h2>Make a new plan</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><Icon name="close" /></button></div>
       <label className="field-label" htmlFor="poll-title">What are we planning?</label>
-      <input id="poll-title" className="text-input" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={64} required />
+      <input id="poll-title" className="text-input" placeholder="A little afternoon together" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={64} required />
+      <label className="field-label" htmlFor="poll-deadline">Vote closes</label>
+      <input id="poll-deadline" type="date" className="text-input" min={today} value={deadlineDate} onChange={(event) => setDeadlineDate(event.target.value)} required />
       <div className="field-label field-label-row"><span>Pick possible dates</span><span className="field-hint">Select every day that could work</span></div>
       <div className="poll-calendar">
         <div className="poll-calendar-toolbar"><button type="button" className="icon-button" aria-label="Previous month" onClick={() => setMonthOffset((value) => value - 1)}>‹</button><strong>{monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</strong><button type="button" className="icon-button" aria-label="Next month" onClick={() => setMonthOffset((value) => value + 1)}>›</button></div>
@@ -265,15 +187,16 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
           if (!day) return <span className="calendar-empty" key={`pad-${index}`} />;
           const option = choices.find((choice) => choice.day === day);
           const selected = selectedDates.includes(option.id);
-          return <button type="button" key={option.id} className={`poll-calendar-day${selected ? ' is-selected' : ''}`} aria-pressed={selected} aria-label={`${option.label}${selected ? ', selected' : ''}`} onClick={() => toggleDate(option.id)}><span>{day}</span>{selected && <i />}</button>;
+          const isPast = option.id < today;
+          return <button type="button" key={option.id} disabled={isPast} className={`poll-calendar-day${selected ? ' is-selected' : ''}`} aria-pressed={selected} aria-label={`${option.label}${selected ? ', selected' : ''}`} onClick={() => toggleDate(option.id)}><span>{day}</span>{selected && <i />}</button>;
         })}</div>
         <div className="selected-date-note"><Icon name="clock" size={15} /><span>Selected dates are offered at 4:00 PM; you can choose more than one.</span></div>
       </div>
       <div className="modal-two-col">
-        <label className="field-label">Place ideas <span className="field-hint">One per line</span><textarea className="text-input textarea" value={placeOptions} onChange={(event) => setPlaceOptions(event.target.value)} rows="3" /></label>
-        <label className="field-label">Budget ideas <span className="field-hint">One per line</span><textarea className="text-input textarea" value={budgetOptions} onChange={(event) => setBudgetOptions(event.target.value)} rows="3" /></label>
+        <label className="field-label">Place ideas <span className="field-hint">One per line</span><textarea className="text-input textarea" placeholder={'Old Quarter\nWest Lake\nLet the group pick'} value={placeOptions} onChange={(event) => setPlaceOptions(event.target.value)} rows="3" /></label>
+        <label className="field-label">Budget ideas <span className="field-hint">One per line</span><textarea className="text-input textarea" placeholder={'Under ₫300k\n₫300k–₫500k\nKeep it flexible'} value={budgetOptions} onChange={(event) => setBudgetOptions(event.target.value)} rows="3" /></label>
       </div>
-      <div className="modal-actions"><p><Icon name="people" size={16} /> Everyone in Fish Upon The Sky can vote and edit</p><button className="button button-primary" type="submit">Open this vote <Icon name="arrow" size={17} /></button></div>
+      <div className="modal-actions"><p><Icon name="people" size={16} /> Everyone in Fish Upon The Sky can vote and edit</p><button className="button button-primary" type="submit" disabled={!title.trim() || selectedDates.length === 0 || !deadlineDate}>Open this vote <Icon name="arrow" size={17} /></button></div>
     </motion.form>
   </motion.div>;
 }
@@ -319,9 +242,9 @@ function CalendarView({
   googleAccessToken,
   onUpdateGoogleToken,
   onClearGoogleToken,
-  onChangeDemoMember,
   busyDays,
-  setBusyDays,
+  onToggleBusy,
+  onAddBusyDays,
   polls,
 }) {
   const [monthOffset, setMonthOffset] = useState(0);
@@ -334,19 +257,21 @@ function CalendarView({
   const [syncedEventIds, setSyncedEventIds] = useState({});
   const [showOauthNote, setShowOauthNote] = useState(false);
 
-  const start = new Date(2026, 10 + monthOffset, 1);
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
   const year = start.getFullYear();
   const month = start.getMonth();
   const firstWeekday = (start.getDay() + 6) % 7;
   const totalDays = new Date(year, month + 1, 0).getDate();
   const dayCells = [...Array(firstWeekday).fill(null), ...Array.from({ length: totalDays }, (_, i) => i + 1)];
   const todayBusy = busyDays[currentMemberId] ?? [];
-  const toggleBusy = (dayKey) => setBusyDays((old) => {
-    const current = old[currentMemberId] ?? [];
-    const next = current.includes(dayKey) ? current.filter((d) => d !== dayKey) : [...current, dayKey];
-    return { ...old, [currentMemberId]: next };
-  });
   const title = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const ideaDates = new Set(
+    polls
+      .filter((p) => p.status === 'Voting')
+      .flatMap((p) => (p.options || []).map((o) => o.id)),
+  );
 
   const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
   const eventsByDay = gcalEvents.reduce((acc, ev) => {
@@ -430,17 +355,13 @@ function CalendarView({
     onClearGoogleToken?.();
   };
 
-  const handleApplyBusyDays = () => {
+  const handleApplyBusyDays = async () => {
     const monthEventKeys = Object.keys(eventsByDay);
     if (monthEventKeys.length === 0) {
       setGcalStatus('No busy events found in your Google Calendar for this month.');
       return;
     }
-    setBusyDays((old) => {
-      const current = old[currentMemberId] ?? [];
-      const merged = Array.from(new Set([...current, ...monthEventKeys]));
-      return { ...old, [currentMemberId]: merged };
-    });
+    await onAddBusyDays?.(monthEventKeys);
     setGcalStatus(`Marked ${monthEventKeys.length} day(s) busy from Google Calendar.`);
   };
 
@@ -498,7 +419,7 @@ function CalendarView({
           if (!day) return <span className="calendar-empty" key={`empty-${index}`} />;
           const dayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const isBusy = todayBusy.includes(dayKey);
-          const hasIdea = [5, 6, 12, 19].includes(day) && month === 11;
+          const hasIdea = ideaDates.has(dayKey);
           const dayGcal = eventsByDay[dayKey] ?? [];
           const hasGcal = dayGcal.length > 0;
           return (
@@ -508,7 +429,7 @@ function CalendarView({
               aria-label={`${title} ${day}${isBusy ? ', marked busy' : ''}${hasGcal ? `, ${dayGcal.length} Google Calendar event` : ''}`}
               title={hasGcal ? dayGcal.map((e) => `${e.startTime}: ${e.title}`).join('\n') : undefined}
               aria-pressed={isBusy}
-              onClick={() => toggleBusy(dayKey)}
+              onClick={() => onToggleBusy(dayKey)}
             >
               <span>{day}</span>
               {hasGcal && <b className="gcal-day-dot" aria-hidden="true" />}
@@ -526,7 +447,6 @@ function CalendarView({
         <span className="eyebrow">A quick check-in</span>
         <h2>Mark the days you can’t make.</h2>
         <p>Your availability stays linked to <strong>{currentMemberName}</strong>{currentUserEmail ? ` (${currentUserEmail})` : ''}.</p>
-        {onChangeDemoMember && <><label className="field-label" htmlFor="member-switch">Editing as</label><MemberSelect id="member-switch" currentMemberId={currentMemberId} onChange={onChangeDemoMember} /></>}
 
         <div className="gcal-panel">
           <div className="gcal-panel-head">
@@ -610,30 +530,35 @@ function CalendarView({
   </section>;
 }
 
-function MemberSelect({ id = 'member-select', currentMemberId, onChange }) {
-  return <select id={id} className="text-input member-select" value={currentMemberId} onChange={(event) => onChange?.(event.target.value)}>
-    {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-  </select>;
-}
-
 function OutingsView({ polls, outings, onNewPoll, currentMemberId, onVote, goTo, onStatusChange }) {
+  const openPolls = polls.filter((poll) => poll.status === 'Voting');
+
   return <section className="page-section">
     <div className="page-title-row"><div><span className="eyebrow">Ideas turn into good days</span><h1>Outings & plans.</h1><p>From the first idea to the little checklist that gets everyone out the door.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> New outing poll</button></div>
-    {polls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{polls.map((poll) => <VoteCard key={poll.id} poll={poll} currentMemberId={currentMemberId} onToggleVote={onVote} />)}</div></div>}
+    {openPolls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{openPolls.map((poll) => <VoteCard key={poll.id} poll={poll} currentMemberId={currentMemberId} onToggleVote={onVote} />)}</div></div>}
     <SectionHeading kicker="The group’s story" title="Every plan has a place" />
-    <div className="outing-list">{outings.map((outing) => <article className="outing-row" key={outing.id}><span className={`outing-marker marker-${outing.status.toLowerCase()}`}><Icon name={outing.status === 'Done' ? 'check' : 'spark'} size={18} /></span><div className="outing-main"><div className="outing-title-line"><h3>{outing.title}</h3><label className="sr-only" htmlFor={`status-${outing.id}`}>Update status for {outing.title}</label><select id={`status-${outing.id}`} className={`status-select status-${outing.status.toLowerCase()}`} value={outing.status} onChange={(event) => onStatusChange(outing.id, event.target.value)}><option>Idea</option><option>Planning</option><option>Confirmed</option><option>Done</option></select></div><p>{outing.date} <span>·</span> {outing.place}</p></div><button className="text-button" onClick={() => goTo('vault')}>Open vault <Icon name="arrow" size={17} /></button></article>)}</div>
+    {outings.length === 0 ? (
+      <div className="soft-callout">
+        <span className="callout-illustration"><Icon name="spark" size={23} /></span>
+        <div>
+          <strong>Chưa có kế hoạch nào — tạo poll đầu tiên</strong>
+          <p>Bấm “New outing poll” để cả nhóm cùng chọn ngày, địa điểm và ngân sách.</p>
+        </div>
+      </div>
+    ) : (
+      <div className="outing-list">{outings.map((outing) => <article className="outing-row" key={outing.id}><span className={`outing-marker marker-${outing.status.toLowerCase()}`}><Icon name={outing.status === 'Done' ? 'check' : 'spark'} size={18} /></span><div className="outing-main"><div className="outing-title-line"><h3>{outing.title}</h3><label className="sr-only" htmlFor={`status-${outing.id}`}>Update status for {outing.title}</label><select id={`status-${outing.id}`} className={`status-select status-${outing.status.toLowerCase()}`} value={outing.status} onChange={(event) => onStatusChange(outing.id, event.target.value)}><option>Idea</option><option>Planning</option><option>Confirmed</option><option>Done</option></select></div><p>{outing.date} <span>·</span> {outing.place}</p></div><button className="text-button" onClick={() => goTo('vault')}>Open vault <Icon name="arrow" size={17} /></button></article>)}</div>
+    )}
     <div className="soft-callout"><span className="callout-illustration"><Icon name="heart" size={23} /></span><div><strong>Small plans count too.</strong><p>Keep even the “maybe sometime” ideas here until the right day appears.</p></div></div>
   </section>;
 }
 
 export function PlannerApp({
-  currentMemberId: entryMemberId,
+  client,
+  currentMemberId,
   currentUserEmail = '',
   googleAccessToken = '',
   onUpdateGoogleToken,
   onClearGoogleToken,
-  identityMode,
-  onExitDemo,
   onSignOut,
   passwordResetNotice,
 }) {
@@ -643,6 +568,24 @@ export function PlannerApp({
   const [activeTab, setActiveTab] = useState('home');
   const [showPollModal, setShowPollModal] = useState(false);
   const didMountTabRef = useRef(false);
+
+  const {
+    members,
+    polls,
+    outings,
+    busyDays,
+    loading,
+    syncError,
+    dismissError,
+    updateMemberProfile,
+    toggleVote,
+    createPoll,
+    updateTrip,
+    addPastTrip,
+    changeOutingStatus,
+    toggleBusy,
+    addBusyDays,
+  } = useGroupData(client, currentMemberId, people);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
@@ -659,30 +602,8 @@ export function PlannerApp({
     }
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
   }, [activeTab, reduceMotion]);
-  const isDemo = identityMode === 'demo';
-  const [demoMemberId, setDemoMemberId] = useState(entryMemberId);
-  const currentMemberId = isDemo ? demoMemberId : entryMemberId;
-  const onChangeDemoMember = isDemo ? setDemoMemberId : undefined;
-  const [busyDays, setBusyDays] = useState({});
-  const [members, setMembers] = useState(() => loadMemberProfiles(people));
-  const [polls, setPolls] = useState(initialPolls);
-  const [outings, setOutings] = useState(initialOutings);
 
-  const updateMemberProfile = (memberId, patch) => {
-    if (memberId !== currentMemberId) {
-      return { ok: false, error: 'Chỉ chủ hồ sơ mới có quyền chỉnh sửa.' };
-    }
-    const nextMembers = members.map((person) =>
-      person.id === memberId ? { ...person, ...patch, id: person.id, name: person.name, color: person.color } : person,
-    );
-    const saved = saveMemberProfiles(nextMembers);
-    if (!saved.ok) {
-      return saved;
-    }
-    setMembers(nextMembers);
-    return { ok: true };
-  };
-  const currentMember = members.find(person => person.id === currentMemberId);
+  const currentMember = members.find((person) => person.id === currentMemberId) || members[0];
   const displayName = currentMember.nickname || currentMember.name;
   const hasOpenPoll = polls.some((poll) => poll.status === 'Voting');
   const pendingTaskCount = (hasOpenPoll ? 1 : 0) + (outings.some((o) => o.status === 'Done' && !o.sheetUrl) ? 1 : 0) + 1;
@@ -695,43 +616,17 @@ export function PlannerApp({
     return item;
   });
 
-  const toggleVote = (pollId, optionId, voteKey = 'votes') => setPolls((current) => current.map((poll) => {
-    if (poll.id !== pollId) return poll;
-    const personVotes = poll[voteKey]?.[currentMemberId] ?? [];
-    const nextVotes = personVotes.includes(optionId) ? personVotes.filter((value) => value !== optionId) : [...personVotes, optionId];
-    return { ...poll, [voteKey]: { ...poll[voteKey], [currentMemberId]: nextVotes } };
-  }));
-  const createPoll = (poll) => {
-    setPolls((current) => [poll, ...current]);
-    setOutings((current) => [{
-      id: poll.id,
-      title: poll.title,
-      date: 'Vote closes Nov 27',
-      place: 'Choosing together',
-      status: 'Planning',
-      sheetUrl: '',
-      albumUrl: '',
-      photos: [],
-      places: [],
-      notes: [],
-    }, ...current]);
+  const handleCreatePoll = async (poll) => {
+    await createPoll(poll);
     setShowPollModal(false);
     setActiveTab('outings');
   };
-  const updateTripVault = (tripId, updater) => {
-    setOutings((current) => current.map((trip) => (trip.id === tripId ? updater(trip) : trip)));
-  };
-  const addPastTrip = (newTrip) => {
-    setOutings((current) => [newTrip, ...current]);
-  };
-  const changeOutingStatus = (outingId, status) => setOutings((current) => current.map((outing) => outing.id === outingId ? { ...outing, status } : outing));
 
   return <div className={`app-shell${theme === 'dark' ? ' theme-dark' : ''}`}>
     <AnimatePresence>
       {showReveal && (
         <WelcomeReveal
           memberName={displayName}
-          isDemo={isDemo}
           theme={theme}
           onDone={() => setShowReveal(false)}
         />
@@ -744,7 +639,6 @@ export function PlannerApp({
           <img className="brand-fish" src={logo} alt="" />
           <strong>Fish Upon The Sky</strong>
         </button>
-        {isDemo && <span className="session-badge">DEMO</span>}
       </div>
 
       <nav className="header-nav" aria-label="Main navigation">
@@ -768,27 +662,31 @@ export function PlannerApp({
           <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
         </button>
 
-        {isDemo ? (
-          <div className="header-demo-member">
-            <label className="sr-only" htmlFor="header-member">Playing as</label>
-            <MemberSelect id="header-member" currentMemberId={currentMemberId} onChange={onChangeDemoMember} />
-          </div>
-        ) : (
-          <div className="topbar-member" title={currentUserEmail ? `Signed in as ${currentMember.name} (${currentUserEmail})` : `Signed in as ${currentMember.name}`}>
-            <Avatar person={currentMember} small />
-            <span>{displayName}</span>
-          </div>
-        )}
+        <div className="topbar-member" title={currentUserEmail ? `Signed in as ${currentMember.name} (${currentUserEmail})` : `Signed in as ${currentMember.name}`}>
+          <Avatar person={currentMember} small />
+          <span>{displayName}</span>
+        </div>
 
         <button type="button" className="button button-primary topbar-new" onClick={() => setShowPollModal(true)}>
           <Icon name="plus" size={17} /> <span>New plan</span>
         </button>
 
-        <SessionExitButton demo={isDemo} onExit={isDemo ? onExitDemo : onSignOut} />
+        <SessionExitButton onExit={onSignOut} />
       </div>
     </header>
 
     {passwordResetNotice && <p className="planner-reset-notice">{passwordResetNotice}</p>}
+    {loading && <p className="planner-reset-notice" role="status">Đang đồng bộ…</p>}
+    {syncError && (
+      <p
+        className="planner-reset-notice"
+        role="alert"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}
+      >
+        <span>{syncError}</span>
+        <button type="button" className="quiet-button" onClick={dismissError}>Đóng</button>
+      </p>
+    )}
 
     <div className="app-main">
       <main className="page-content">
@@ -822,19 +720,29 @@ export function PlannerApp({
                 googleAccessToken={googleAccessToken}
                 onUpdateGoogleToken={onUpdateGoogleToken}
                 onClearGoogleToken={onClearGoogleToken}
-                onChangeDemoMember={onChangeDemoMember}
                 busyDays={busyDays}
-                setBusyDays={setBusyDays}
+                onToggleBusy={toggleBusy}
+                onAddBusyDays={addBusyDays}
                 polls={polls}
               />
             )}
-            {activeTab === 'outings' && <OutingsView polls={polls} outings={outings} onNewPoll={() => setShowPollModal(true)} currentMemberId={currentMemberId} onVote={toggleVote} goTo={navigateToTab} onStatusChange={changeOutingStatus} />}
+            {activeTab === 'outings' && (
+              <OutingsView
+                polls={polls}
+                outings={outings}
+                onNewPoll={() => setShowPollModal(true)}
+                currentMemberId={currentMemberId}
+                onVote={toggleVote}
+                goTo={navigateToTab}
+                onStatusChange={changeOutingStatus}
+              />
+            )}
             {activeTab === 'vault' && (
               <TripVaultView
                 trips={outings}
                 theme={theme}
                 currentMemberName={displayName}
-                onUpdateTrip={updateTripVault}
+                onUpdateTrip={updateTrip}
                 onAddPastTrip={addPastTrip}
               />
             )}
@@ -867,38 +775,170 @@ export function PlannerApp({
         ariaLabel="Mobile navigation"
       />
     </nav>
-    <AnimatePresence>{showPollModal && <NewPollModal onClose={() => setShowPollModal(false)} onCreate={createPoll} reduceMotion={reduceMotion} />}</AnimatePresence>
+    <AnimatePresence>{showPollModal && <NewPollModal onClose={() => setShowPollModal(false)} onCreate={handleCreatePoll} reduceMotion={reduceMotion} />}</AnimatePresence>
   </div>;
 }
 
+function MemberGate({
+  client,
+  currentUserEmail = '',
+  onSignOut,
+  passwordResetNotice,
+  googleAccessToken,
+  onUpdateGoogleToken,
+  onClearGoogleToken,
+}) {
+  const [status, setStatus] = useState('loading');
+  const [memberId, setMemberId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (!client) return undefined;
+    let active = true;
+    setStatus('loading');
+    setErrorMsg('');
+
+    fetchCurrentMemberId(client)
+      .then((resolvedId) => {
+        if (!active) return;
+        if (resolvedId && people.some((person) => person.id === resolvedId)) {
+          setMemberId(resolvedId);
+          setStatus('ready');
+        } else {
+          setMemberId(null);
+          setStatus('unlinked');
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        setErrorMsg(err?.message || 'Không thể kiểm tra tài khoản thành viên.');
+        setStatus('error');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [client, retryCount]);
+
+  if (status === 'loading') {
+    return (
+      <AuthLayout>
+        <div className="auth-inner">
+          <h1 id="auth-heading">Opening your planner</h1>
+          <p className="auth-intro" role="status">Checking your member access…</p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AuthLayout>
+        <div className="auth-inner">
+          <h1 id="auth-heading">Không thể kết nối</h1>
+          <p className="auth-intro" role="alert">{errorMsg}</p>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="auth-primary" onClick={() => setRetryCount((c) => c + 1)}>
+              Thử lại
+            </button>
+            <SessionExitButton onExit={onSignOut} />
+          </div>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (status === 'unlinked') {
+    return (
+      <AuthLayout>
+        <div className="auth-inner">
+          {passwordResetNotice && <p className="auth-notice auth-success">{passwordResetNotice}</p>}
+          <h1 id="auth-heading">Tài khoản chưa được liên kết</h1>
+          <p className="auth-intro">
+            {currentUserEmail
+              ? `Tài khoản ${currentUserEmail} chưa nằm trong danh sách 7 thành viên.`
+              : 'Tài khoản này chưa nằm trong danh sách 7 thành viên.'}{' '}
+            Hãy nhờ trưởng nhóm thêm email hoặc Clerk user ID của bạn vào bảng <code>member_accounts</code> trên Supabase.
+          </p>
+          <SessionExitButton onExit={onSignOut} />
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <PlannerApp
+      client={client}
+      currentMemberId={memberId}
+      currentUserEmail={currentUserEmail}
+      googleAccessToken={googleAccessToken}
+      onUpdateGoogleToken={onUpdateGoogleToken}
+      onClearGoogleToken={onClearGoogleToken}
+      onSignOut={onSignOut}
+      passwordResetNotice={passwordResetNotice}
+    />
+  );
+}
+
 export default function App() {
-  const [demoMemberId, setDemoMemberId] = useState(null);
-  const [gmailSession, setGmailSession] = useState(() => loadGmailSession());
+  const [googleSession, setGoogleSession] = useState(null);
+  const [checkingGoogle, setCheckingGoogle] = useState(hasSupabaseConfiguration);
   const [googleAccessToken, setGoogleAccessToken] = useState('');
-  const restoreDemoFocus = useRef(false);
 
-  function exitDemo() {
-    restoreDemoFocus.current = true;
-    setDemoMemberId(null);
-  }
+  useEffect(() => {
+    if (!hasSupabaseConfiguration) return undefined;
+    const supabase = getGoogleSupabase();
+    let active = true;
 
-  function enterGmail(session) {
-    setGoogleAccessToken(session.accessToken || '');
-    saveGmailSession(session);
-    setGmailSession({
-      email: session.email,
-      sub: session.sub || '',
-      memberId: session.memberId,
-      name: session.name || '',
-      picture: session.picture || '',
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setGoogleSession(data?.session ?? null);
+      setCheckingGoogle(false);
+    }).catch(() => {
+      if (!active) return;
+      setCheckingGoogle(false);
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setGoogleSession(session ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  if (!hasSupabaseConfiguration) {
+    return (
+      <AuthLayout>
+        <div className="auth-inner">
+          <h1 id="auth-heading">Cần cấu hình Supabase</h1>
+          <p className="auth-intro">
+            Trang chưa được cấu hình. Thêm <code>VITE_SUPABASE_URL</code> và <code>VITE_SUPABASE_ANON_KEY</code> vào <code>.env</code> hoặc biến môi trường Cloudflare Pages (xem <code>docs/GO-LIVE.md</code>).
+          </p>
+        </div>
+      </AuthLayout>
+    );
   }
 
-  function exitGmail() {
+  async function handleGoogleSignIn() {
+    const supabase = getGoogleSupabase();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+    if (error) throw error;
+  }
+
+  async function signOutGoogle() {
     if (googleAccessToken) revokeGoogleToken(googleAccessToken);
     setGoogleAccessToken('');
-    clearGmailSession();
-    setGmailSession(null);
+    await getGoogleSupabase().auth.signOut();
   }
 
   function updateGoogleToken({ accessToken }) {
@@ -909,29 +949,43 @@ export default function App() {
     setGoogleAccessToken('');
   }
 
-  function focusDemoButton(button) {
-    if (button && restoreDemoFocus.current) {
-      restoreDemoFocus.current = false;
-      button.focus();
-    }
+  if (checkingGoogle) {
+    return (
+      <AuthLayout>
+        <div className="auth-inner">
+          <h1 id="auth-heading">Opening your planner</h1>
+          <p className="auth-intro" role="status">Checking your sign-in…</p>
+        </div>
+      </AuthLayout>
+    );
   }
 
-  if (demoMemberId) {
-    return <PlannerApp currentMemberId={demoMemberId} identityMode="demo" onExitDemo={exitDemo} />;
-  }
-  if (gmailSession && people.some((person) => person.id === gmailSession.memberId)) {
+  if (googleSession) {
     return (
-      <PlannerApp
-        currentMemberId={gmailSession.memberId}
-        currentUserEmail={gmailSession.email}
+      <MemberGate
+        client={getGoogleSupabase()}
+        currentUserEmail={googleSession.user?.email || ''}
+        onSignOut={signOutGoogle}
         googleAccessToken={googleAccessToken}
         onUpdateGoogleToken={updateGoogleToken}
         onClearGoogleToken={clearGoogleToken}
-        identityMode="gmail"
-        onSignOut={exitGmail}
       />
     );
   }
-  return <ClerkAuthRoot publishableKey={clerkPublishableKey} members={people} onEnterDemo={setDemoMemberId}
-    onEnterGmail={enterGmail} demoButtonRef={focusDemoButton} renderPlanner={identity => <PlannerApp {...identity} />} />;
+
+  return (
+    <ClerkAuthRoot
+      publishableKey={clerkPublishableKey}
+      googleAvailable={hasSupabaseConfiguration}
+      onGoogleSignIn={handleGoogleSignIn}
+      renderPlanner={(identity) => (
+        <MemberGate
+          {...identity}
+          googleAccessToken={googleAccessToken}
+          onUpdateGoogleToken={updateGoogleToken}
+          onClearGoogleToken={clearGoogleToken}
+        />
+      )}
+    />
+  );
 }

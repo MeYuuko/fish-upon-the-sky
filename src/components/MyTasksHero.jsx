@@ -1961,9 +1961,14 @@ export default function MyTasksHero({ memberName, polls, outings, members, onNew
   const reduce = useReducedMotion();
 
   const openPoll = polls.find((poll) => poll.status === 'Voting');
-  const sheetMissing = outings.some((outing) => outing.status === 'Done' && !outing.sheetUrl);
+  const sheetMissingOuting = outings.find((outing) => outing.status === 'Done' && !outing.sheetUrl);
 
   const tasks = useMemo(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const busyRangeLabel = `${now.toLocaleDateString('en-US', { month: 'short' })}–${nextMonth.toLocaleDateString('en-US', { month: 'short' })} schedule`;
+    const memberCountLabel = `${String(members.length).padStart(2, '0')} Schedules`;
+
     const list = [];
     if (openPoll) {
       list.push({
@@ -1978,14 +1983,14 @@ export default function MyTasksHero({ memberName, polls, outings, members, onNew
         actionLabel: 'Open poll in Outings',
       });
     }
-    if (sheetMissing) {
+    if (sheetMissingOuting) {
       list.push({
         id: 'sheet',
         title: 'Add expense sheet',
-        subtitle: 'Riverside picnic',
+        subtitle: sheetMissingOuting.title,
         accent: '#0192C6',
         icon: 'link',
-        tags: ['Shared Sheet', 'West Lake'],
+        tags: ['Shared Sheet', sheetMissingOuting.place || 'Trip Vault'],
         detail: 'Attach the group expense sheet link so everyone can check splits.',
         target: 'vault',
         actionLabel: 'Open Trip Vault',
@@ -1994,16 +1999,16 @@ export default function MyTasksHero({ memberName, polls, outings, members, onNew
     list.push({
       id: 'busy',
       title: 'Mark busy days',
-      subtitle: 'Nov–Dec schedule',
+      subtitle: busyRangeLabel,
       accent: '#D4EAFF',
       icon: 'calendar',
-      tags: ['07 Schedules', 'Quick Tap'],
+      tags: [memberCountLabel, 'Quick Tap'],
       detail: 'Tap the days you are unavailable so the group can spot a shared free day.',
       target: 'calendar',
       actionLabel: 'Open Calendar',
     });
     return list;
-  }, [openPoll, sheetMissing]);
+  }, [openPoll, sheetMissingOuting, members.length]);
 
   const config = useMemo(
     () => ({
@@ -2044,7 +2049,7 @@ export default function MyTasksHero({ memberName, polls, outings, members, onNew
         stampTilt: -6,
         hint: 'Click to flip',
         back: {
-          title: '7 members synced',
+          title: `${members.length} members synced`,
           text: 'Votes, schedules, and sheets stay together in one shared space.',
           action: 'Back',
         },

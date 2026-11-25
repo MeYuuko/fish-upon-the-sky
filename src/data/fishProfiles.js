@@ -14,8 +14,6 @@ import quocAnhCutout from '../assets/cutouts/quoc-anh.png';
 import thuCutout from '../assets/cutouts/thu.png';
 import thienCutout from '../assets/cutouts/thien.png';
 
-export const MEMBER_PROFILES_STORAGE_KEY = 'fish_upon_the_sky_member_profiles_v1';
-
 export const DEFAULT_FISH_PHOTOS = {
   bao: baoPhoto,
   hang: hangPhoto,
@@ -543,17 +541,8 @@ function normalizeLetter(savedLetter, fallbackLetter, memberName) {
   };
 }
 
-export function loadMemberProfiles(basePeople) {
-  let savedMap = {};
-  try {
-    const raw = window.localStorage.getItem(MEMBER_PROFILES_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') savedMap = parsed;
-    }
-  } catch {
-    savedMap = {};
-  }
+export function buildMemberProfiles(basePeople, savedMap = {}) {
+  const safeMap = savedMap && typeof savedMap === 'object' ? savedMap : {};
 
   return basePeople.map((person) => {
     const cutout = DEFAULT_FISH_CUTOUTS[person.id] || { src: '', width: 1024, height: 1536 };
@@ -584,7 +573,7 @@ export function loadMemberProfiles(basePeople) {
       }),
     };
 
-    const saved = savedMap[person.id] && typeof savedMap[person.id] === 'object' ? savedMap[person.id] : {};
+    const saved = safeMap[person.id] && typeof safeMap[person.id] === 'object' ? safeMap[person.id] : {};
 
     return {
       ...defaults,
@@ -617,40 +606,25 @@ export function loadMemberProfiles(basePeople) {
   });
 }
 
-export function saveMemberProfiles(members) {
-  try {
-    const payload = {};
-    for (const member of members) {
-      payload[member.id] = {
-        displayFirst: member.displayFirst,
-        displayLast: member.displayLast,
-        nickname: member.nickname,
-        craft: member.craft,
-        role: member.role,
-        roles: member.roles,
-        headline: member.headline,
-        bio: member.bio,
-        birthday: member.birthday,
-        foodNotes: member.foodNotes,
-        contact: member.contact,
-        focus: member.focus,
-        customPhoto: member.customPhoto || '',
-        socials: member.socials,
-        books: member.books,
-        letter: member.letter,
-      };
-    }
-    window.localStorage.setItem(MEMBER_PROFILES_STORAGE_KEY, JSON.stringify(payload));
-    return { ok: true };
-  } catch (err) {
-    return {
-      ok: false,
-      error:
-        err?.name === 'QuotaExceededError'
-          ? 'Bộ nhớ trình duyệt đã đầy (có thể do ảnh quá lớn). Hãy thử chọn ảnh nhẹ hơn hoặc khôi phục ảnh gốc.'
-          : 'Không thể lưu hồ sơ vào bộ nhớ trình duyệt.',
-    };
-  }
+export function serializeMemberProfile(member) {
+  return {
+    displayFirst: member.displayFirst,
+    displayLast: member.displayLast,
+    nickname: member.nickname,
+    craft: member.craft,
+    role: member.role,
+    roles: member.roles,
+    headline: member.headline,
+    bio: member.bio,
+    birthday: member.birthday,
+    foodNotes: member.foodNotes,
+    contact: member.contact,
+    focus: member.focus,
+    customPhoto: member.customPhoto || '',
+    socials: member.socials,
+    books: member.books,
+    letter: member.letter,
+  };
 }
 
 export function compressPortraitFile(file, maxWidth = 720, quality = 0.82) {
