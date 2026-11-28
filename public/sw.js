@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-sky-v4';
+const CACHE_NAME = 'fish-sky-v5';
 const APP_SHELL = [
   '/',
   '/index.html',

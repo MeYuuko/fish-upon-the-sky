@@ -1363,6 +1363,13 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setGoogleSession(session ?? null);
+      if (
+        session &&
+        (window.location.hash.includes('access_token=') ||
+          window.location.search.includes('code='))
+      ) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     });
 
     return () => {
@@ -1389,7 +1396,7 @@ export default function App() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}/`,
         queryParams: { prompt: 'select_account' },
       },
     });

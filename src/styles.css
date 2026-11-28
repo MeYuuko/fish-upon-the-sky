@@ -192,7 +192,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 button:disabled { cursor: not-allowed; opacity: .5; }
 .app-shell {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--color-page);
   color: var(--color-text);
   overflow-x: clip;
@@ -456,7 +459,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .session-exit .quiet-button[aria-disabled="true"] { cursor: wait; }
 .session-exit [role="alert"] { color: var(--color-danger); }
 .theme-dark .session-exit .quiet-button { color: var(--color-ink-soft); }
-.app-main { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: calc(100vh - 76px); overflow-x: clip; }
+.app-main { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1 0 auto; min-height: 0; overflow-x: clip; }
 .topbar-member { display: flex; align-items: center; gap: 8px; color: var(--color-ink-soft); font-size: 13px; font-weight: 700; }
 .page-content { flex: 1 0 auto; width: min(100%, 1320px); margin: 0 auto; padding: clamp(28px, 4vw, 44px) clamp(16px, 4vw, 48px) 24px; }
 .page-content:focus { outline: none; }
@@ -996,7 +999,7 @@ h1, h2, h3 { color: var(--color-text); }
   .topbar-member { display: none; }
   .app-main { padding-bottom: 0; }
   .page-content { padding: 20px 16px 24px; }
-  .bwf { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .bwf { padding-bottom: env(safe-area-inset-bottom); }
   .calendar-layout { grid-template-columns: 1fr; }
   .mobile-nav {
     position: fixed;
@@ -1017,7 +1020,6 @@ h1, h2, h3 { color: var(--color-text); }
     min-height: 64px;
     padding: max(10px, env(safe-area-inset-top)) 0 10px;
   }
-  .app-main { min-height: calc(100dvh - 64px); }
   .studio-header-inner { padding: 0 16px; }
   .brand-lockup strong { font-size: 15px; }
   .header-actions { gap: 6px; }
@@ -9316,10 +9318,6 @@ textarea {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-}
-
-.app-main {
-  min-height: calc(100dvh - 76px);
 }
 
 @media (max-width: 760px) {
