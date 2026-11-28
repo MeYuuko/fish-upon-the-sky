@@ -3597,6 +3597,21 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 }
 .vault-cat-select { flex: 0 0 120px !important; }
 .vault-upload-btn { cursor: pointer; }
+.vault-upload-btn.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+.vault-upload-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+.vault-upload-progress-bar {
+  height: 100%;
+  background: var(--palette-citrus);
+  transition: width 0.2s ease;
+}
 
 .vault-field-error {
   margin: 0;

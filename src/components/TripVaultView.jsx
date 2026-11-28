@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import GlassFolder from './GlassFolder.jsx';
 import BrandIcon from './BrandIcon.jsx';
+import { compressImageFile } from '../data/images.js';
+
+const MAX_VAULT_PHOTOS = 24;
 
 const BRAND_VAULT_ICONS = new Set([
   'folder',
@@ -217,6 +220,7 @@ function TripDetailModal({
   const [albumInput, setAlbumInput] = useState(trip.albumUrl || '');
   const [photoCaption, setPhotoCaption] = useState('');
   const [photoError, setPhotoError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(null);
   const fileInputRef = useRef(null);
 
   // Place states
@@ -272,40 +276,82 @@ function TripDetailModal({
     window.setTimeout(() => setSheetSavedFlash(false), 1800);
   };
 
-  const handleUploadFiles = (event) => {
+  const handleUploadFiles = async (event) => {
+    if (uploadProgress) return;
     const fileList = Array.from(event.target.files || []);
     if (fileList.length === 0) return;
     setPhotoError('');
 
-    fileList.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        setPhotoError('Only image files can be added to the trip gallery.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = typeof reader.result === 'string' ? reader.result : '';
-        if (!result) return;
-        const cleanCaption =
-          photoCaption.trim() || file.name.replace(/\.[^/.]+$/, '');
-        onUpdateTrip(trip.id, (prev) => ({
-          ...prev,
-          photos: [
-            ...(prev.photos ?? []),
-            {
-              id: `ph-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-              url: result,
-              caption: cleanCaption,
-              addedBy: currentMemberName,
-            },
-          ],
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
+    const validFiles = fileList.filter((file) => String(file.type || '').startsWith('image/'));
+    const skippedNonImages = fileList.length - validFiles.length;
 
-    setPhotoCaption('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (validFiles.length === 0) {
+      setPhotoError('Only image files can be added to the trip gallery.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const currentCount = (trip.photos ?? []).length;
+    const remaining = Math.max(0, MAX_VAULT_PHOTOS - currentCount);
+    if (remaining === 0) {
+      setPhotoError(
+        `Vault limit reached (${MAX_VAULT_PHOTOS} highlights). Add full RAW/4K albums to your Google Drive link below.`,
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const batch = validFiles.slice(0, remaining);
+    const truncated = validFiles.length > remaining;
+    const total = batch.length;
+    const captionBase = photoCaption.trim();
+
+    setUploadProgress({ done: 0, total, phase: 'compressing' });
+
+    try {
+      const newPhotos = [];
+      let failedCount = 0;
+
+      for (let i = 0; i < batch.length; i += 1) {
+        const file = batch[i];
+        try {
+          const dataUrl = await compressImageFile(file, {
+            maxWidth: 1600,
+            quality: 0.82,
+          });
+          const cleanCaption = captionBase || file.name.replace(/\.[^/.]+$/, '');
+          newPhotos.push({
+            id: `ph-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            url: dataUrl,
+            caption: cleanCaption,
+            addedBy: currentMemberName,
+          });
+        } catch {
+          failedCount += 1;
+        }
+        setUploadProgress({ done: i + 1, total, phase: 'compressing' });
+      }
+
+      if (newPhotos.length > 0) {
+        setUploadProgress({ done: total, total, phase: 'uploading' });
+        await onUpdateTrip(trip.id, (prev) => ({
+          ...prev,
+          photos: [...(prev.photos ?? []), ...newPhotos],
+        }));
+      }
+
+      const notices = [];
+      if (skippedNonImages > 0) notices.push(`${skippedNonImages} non-image file(s) skipped.`);
+      if (truncated) notices.push(`Kept ${remaining} photo(s) to stay within the ${MAX_VAULT_PHOTOS}-highlight limit.`);
+      if (failedCount > 0) notices.push(`${failedCount} image(s) could not be processed.`);
+      if (notices.length > 0) setPhotoError(notices.join(' '));
+      setPhotoCaption('');
+    } catch (err) {
+      setPhotoError(err?.message || 'Could not upload photos.');
+    } finally {
+      setUploadProgress(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSaveAlbum = (event) => {
@@ -456,7 +502,9 @@ function TripDetailModal({
               <div className="vault-upload-panel">
                 <div className="vault-upload-copy">
                   <strong>Add trip photos</strong>
-                  <p>Upload from your device to preview right inside this vault and on the glass folder cards.</p>
+                  <p>
+                    {photos.length}/{MAX_VAULT_PHOTOS} highlights · Keep full RAW/4K albums on Google Drive below.
+                  </p>
                 </div>
                 <div className="vault-upload-controls">
                   <input
@@ -465,6 +513,7 @@ function TripDetailModal({
                     placeholder="Optional caption before choosing files"
                     value={photoCaption}
                     onChange={(event) => setPhotoCaption(event.target.value)}
+                    disabled={Boolean(uploadProgress)}
                   />
                   <input
                     ref={fileInputRef}
@@ -472,14 +521,35 @@ function TripDetailModal({
                     type="file"
                     accept="image/*"
                     multiple
+                    disabled={Boolean(uploadProgress)}
                     className="sr-only"
                     onChange={handleUploadFiles}
                   />
-                  <label htmlFor="vault-photo-upload" className="button button-primary vault-upload-btn">
+                  <label
+                    htmlFor="vault-photo-upload"
+                    className={`button button-primary vault-upload-btn${uploadProgress ? ' is-disabled' : ''}`}
+                    aria-disabled={Boolean(uploadProgress)}
+                  >
                     <VaultIcon name="upload" size={16} />
-                    <span>Upload photos</span>
+                    <span>
+                      {uploadProgress
+                        ? uploadProgress.phase === 'uploading'
+                          ? 'Uploading…'
+                          : `Optimizing ${uploadProgress.done}/${uploadProgress.total}…`
+                        : 'Upload photos'}
+                    </span>
                   </label>
                 </div>
+                {uploadProgress && (
+                  <div className="vault-upload-progress" role="progressbar" aria-valuenow={uploadProgress.done} aria-valuemax={uploadProgress.total}>
+                    <div
+                      className="vault-upload-progress-bar"
+                      style={{
+                        width: `${Math.round((uploadProgress.done / Math.max(1, uploadProgress.total)) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
                 {photoError && <p className="vault-field-error">{photoError}</p>}
               </div>
 
@@ -521,7 +591,7 @@ function TripDetailModal({
                     <figure className="vault-photo-card" key={photo.id}>
                       <div className="vault-photo-media">
                         {photo.url ? (
-                          <img src={photo.url} alt={photo.caption || trip.title} />
+                          <img src={photo.url} alt={photo.caption || trip.title} loading="lazy" decoding="async" />
                         ) : (
                           <div className={`vault-photo-art vault-photo-art-${photo.art || 'cobalt'}`} />
                         )}

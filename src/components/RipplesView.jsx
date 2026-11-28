@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import BrandIcon from './BrandIcon.jsx';
+import { compressImageFile, getPreferredImageFormat } from '../data/images.js';
 import {
   BubbleLayer,
   PondSurface,
@@ -148,38 +149,6 @@ function dateKeyFromIso(iso) {
   return `${y}-${m}-${d}`;
 }
 
-function compressRippleImage(file, maxWidth = 1200, quality = 0.85) {
-  return new Promise((resolve, reject) => {
-    if (!file || !String(file.type || '').startsWith('image/')) {
-      reject(new Error('Please choose a valid image file (JPG, PNG, WEBP).'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Could not read the selected image file.'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('This image could not be decoded.'));
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / Math.max(1, img.width));
-        const targetW = Math.max(1, Math.round(img.width * scale));
-        const targetH = Math.max(1, Math.round(img.height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = targetW;
-        canvas.height = targetH;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas is unavailable in this browser.'));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, targetW, targetH);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = String(reader.result || '');
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 function HudCorners() {
   return (
     <div className="ripples-hud-corners" aria-hidden="true">
@@ -215,7 +184,7 @@ export function DropRippleModal({ outings = [], onClose, onSubmit, reduceMotion 
     if (!file) return;
     setError('');
     try {
-      const dataUrl = await compressRippleImage(file, 1200, 0.85);
+      const dataUrl = await compressImageFile(file, { maxWidth: 1200, quality: 0.82 });
       setPreviewUrl(dataUrl);
     } catch (err) {
       setError(err?.message || 'Could not process this photo.');
@@ -458,6 +427,7 @@ export function LatestRippleWidget({
                 src={latestRipple.imageUrl}
                 alt={latestRipple.caption || 'Latest group ripple'}
                 loading="lazy"
+                decoding="async"
               />
             </button>
             <div className="home-ripple-body">
@@ -637,7 +607,8 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
       ctx.scale(-1, 1);
     }
     ctx.drawImage(video, sx, sy, side, side, 0, 0, target, target);
-    setCapturedUrl(canvas.toDataURL('image/jpeg', 0.86));
+    const { contentType } = getPreferredImageFormat(false);
+    setCapturedUrl(canvas.toDataURL(contentType, 0.82));
     setShutterPulse(Date.now());
     haptic(12);
   };
@@ -646,7 +617,7 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
     if (!file) return;
     setCameraError('');
     try {
-      const dataUrl = await compressRippleImage(file, 1200, 0.85);
+      const dataUrl = await compressImageFile(file, { maxWidth: 1200, quality: 0.82 });
       setCapturedUrl(dataUrl);
     } catch (err) {
       setCameraError(err?.message || 'Could not load that image.');
@@ -1395,6 +1366,7 @@ export default function RipplesView({
                         src={ripple.imageUrl}
                         alt={ripple.caption || 'Group ripple'}
                         loading="lazy"
+                        decoding="async"
                       />
                       {isFresh && <RippleBurst trigger={freshId} tone="sea" />}
                       <span className="ripples-grid-time">{formatRelativeTime(ripple.createdAt)}</span>

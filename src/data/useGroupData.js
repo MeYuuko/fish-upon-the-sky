@@ -17,8 +17,17 @@ import {
   setVote as apiSetVote,
   subscribeGroup,
 } from './groupApi.js';
-import { uploadImage } from './images.js';
+import { deleteImage, uploadImage } from './images.js';
 import { sendGroupPush } from './pushNotifications.js';
+
+function isMediaUrlReferenced(url, outingsList, ripplesList) {
+  if (!url) return false;
+  const inOutings = (outingsList ?? []).some((t) =>
+    (t.photos ?? []).some((p) => p?.url === url),
+  );
+  if (inOutings) return true;
+  return (ripplesList ?? []).some((r) => r?.imageUrl === url);
+}
 
 const SAMPLE_POLLS = [
   {
@@ -393,6 +402,7 @@ export function useGroupData(client, currentMemberId, people) {
       const currentTrip = stateRef.current.outings.find((t) => t.id === tripId);
       if (!currentTrip) return;
 
+      const prevPhotoUrls = (currentTrip.photos ?? []).map((p) => p?.url).filter(Boolean);
       const rawNext = typeof updater === 'function' ? updater(currentTrip) : updater;
       const nextOutings = stateRef.current.outings.map((t) => (t.id === tripId ? rawNext : t));
       setOutings(nextOutings);
@@ -410,7 +420,7 @@ export function useGroupData(client, currentMemberId, people) {
               if (typeof photo?.url === 'string' && photo.url.startsWith('data:')) {
                 const url = await uploadImage(client, `vault/${tripId}`, photo.url, {
                   maxWidth: 1600,
-                  quality: 0.85,
+                  quality: 0.82,
                 });
                 return { ...photo, url };
               }
@@ -422,6 +432,22 @@ export function useGroupData(client, currentMemberId, people) {
         }
 
         await apiSaveOuting(client, finalTrip, currentMemberId);
+
+        const finalOutings = stateRef.current.outings.map((t) =>
+          t.id === tripId ? finalTrip : t,
+        );
+        const nextPhotoUrls = new Set(
+          (finalTrip.photos ?? []).map((p) => p?.url).filter(Boolean),
+        );
+        const removedUrls = Array.from(
+          new Set(prevPhotoUrls.filter((url) => !nextPhotoUrls.has(url))),
+        );
+        const unreferenced = removedUrls.filter(
+          (url) => !isMediaUrlReferenced(url, finalOutings, stateRef.current.ripples),
+        );
+        if (unreferenced.length > 0) {
+          Promise.allSettled(unreferenced.map((url) => deleteImage(client, url)));
+        }
       } catch (err) {
         setSyncError(err?.message || 'Không thể lưu cập nhật chuyến đi. Đang tải lại...');
         refresh({ silent: true });
@@ -593,7 +619,7 @@ export function useGroupData(client, currentMemberId, people) {
         if (client && String(imageUrl).startsWith('data:')) {
           finalUrl = await uploadImage(client, `ripples/${currentMemberId}`, imageUrl, {
             maxWidth: 1200,
-            quality: 0.84,
+            quality: 0.82,
           });
         }
 
@@ -655,6 +681,9 @@ export function useGroupData(client, currentMemberId, people) {
 
       try {
         await apiDeleteRipple(client, rippleId);
+        if (!isMediaUrlReferenced(target.imageUrl, stateRef.current.outings, nextRipples)) {
+          await deleteImage(client, target.imageUrl);
+        }
       } catch (err) {
         setSyncError(err?.message || 'Không thể xóa ảnh này.');
         refresh({ silent: true });

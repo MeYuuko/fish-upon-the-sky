@@ -595,7 +595,7 @@ export default function GlassFolder({
 
           <div className="gf-back" style={{ clipPath: "path('" + BACK_PATH + "')" }} aria-hidden="true">
             {image ? (
-              <img className="gf-art" src={image} alt="" width={W + 24} height={H + 24} draggable={false} />
+              <img className="gf-art" src={image} alt="" width={W + 24} height={H + 24} loading="lazy" decoding="async" draggable={false} />
             ) : art !== 'none' ? (
               <ArtCanvas className="gf-art" art={art} seed={seed} w={W + 24} h={H + 24} density={density} priority={0} />
             ) : null}
@@ -657,6 +657,8 @@ export default function GlassFolder({
                         alt=""
                         width={SHEET_W}
                         height={SHEET_H}
+                        loading="lazy"
+                        decoding="async"
                         draggable={false}
                       />
                     ) : (
