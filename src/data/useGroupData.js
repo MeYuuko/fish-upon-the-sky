@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { buildMemberProfiles, serializeMemberProfile } from './fishProfiles.js';
+import { buildMemberProfiles, DEFAULT_FISH_PHOTOS, serializeMemberProfile } from './fishProfiles.js';
+import groupPhoto from '../../Picture/Ảnh nhóm.jpg';
 import {
   addBusyDays as apiAddBusyDays,
+  addRippleNote as apiAddRippleNote,
   createPoll as apiCreatePoll,
+  createRipple as apiCreateRipple,
+  deleteRipple as apiDeleteRipple,
+  deleteRippleNote as apiDeleteRippleNote,
   loadAll,
   saveOuting as apiSaveOuting,
   saveProfile as apiSaveProfile,
   setBusyDay as apiSetBusyDay,
+  setRippleReaction as apiSetRippleReaction,
   setVote as apiSetVote,
   subscribeGroup,
 } from './groupApi.js';
@@ -82,6 +88,59 @@ const SAMPLE_BUSY_DAYS = {
   diem: ['2026-11-30'],
 };
 
+const nowMs = Date.now();
+const SAMPLE_RIPPLES = [
+  {
+    id: 'ripple-sample-1',
+    memberId: 'quoc-anh',
+    imageUrl: groupPhoto,
+    caption: 'Đủ 7 con cá trên một bầu trời — vẫn nhớ buổi chiều hôm đó.',
+    place: 'Hồ Tây, Hà Nội',
+    tripId: 'outing-west-lake',
+    createdAt: new Date(nowMs - 1000 * 60 * 35).toISOString(),
+    reactions: {
+      '✦': ['bao', 'hang', 'thu'],
+      '🌊': ['diem', 'quynh'],
+      '🫶': ['thien'],
+    },
+    notes: [
+      {
+        id: 'rn-sample-1',
+        memberId: 'hang',
+        text: 'Tấm này ánh sáng đẹp quá trời!',
+        createdAt: new Date(nowMs - 1000 * 60 * 20).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'ripple-sample-2',
+    memberId: 'hang',
+    imageUrl: DEFAULT_FISH_PHOTOS.hang,
+    caption: 'Tìm được một góc sân vườn đầy nắng cho kèo cuối tuần này.',
+    place: 'Quảng An, Tây Hồ',
+    tripId: '',
+    createdAt: new Date(nowMs - 1000 * 60 * 60 * 5).toISOString(),
+    reactions: {
+      '🍋': ['bao', 'quynh'],
+      '📸': ['quoc-anh'],
+    },
+    notes: [],
+  },
+  {
+    id: 'ripple-sample-3',
+    memberId: 'thu',
+    imageUrl: DEFAULT_FISH_PHOTOS.thu,
+    caption: 'Sáng nay 5:30 mặt hồ yên như tờ, ai dậy sớm cùng không?',
+    place: 'Đường Thanh Niên',
+    tripId: '',
+    createdAt: new Date(nowMs - 1000 * 60 * 60 * 26).toISOString(),
+    reactions: {
+      '🔥': ['thien', 'bao'],
+    },
+    notes: [],
+  },
+];
+
 export function useGroupData(client, currentMemberId, people) {
   const [members, setMembers] = useState(() => {
     try {
@@ -111,11 +170,18 @@ export function useGroupData(client, currentMemberId, people) {
     } catch {}
     return !client ? SAMPLE_BUSY_DAYS : {};
   });
+  const [ripples, setRipples] = useState(() => {
+    try {
+      const local = !client && localStorage.getItem('fish-local-ripples');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return !client ? SAMPLE_RIPPLES : [];
+  });
   const [loading, setLoading] = useState(Boolean(client));
   const [syncError, setSyncError] = useState('');
 
-  const stateRef = useRef({ members, polls, outings, busyDays });
-  stateRef.current = { members, polls, outings, busyDays };
+  const stateRef = useRef({ members, polls, outings, busyDays, ripples });
+  stateRef.current = { members, polls, outings, busyDays, ripples };
 
   const peopleRef = useRef(people);
   peopleRef.current = people;
@@ -129,6 +195,7 @@ export function useGroupData(client, currentMemberId, people) {
       setPolls(data.polls);
       setOutings(data.outings);
       setBusyDays(data.busyDays);
+      setRipples(data.ripples ?? []);
     } catch (err) {
       setSyncError(err?.message || 'Không thể đồng bộ dữ liệu nhóm từ Supabase.');
     } finally {
@@ -427,11 +494,213 @@ export function useGroupData(client, currentMemberId, people) {
     [client, currentMemberId, refresh],
   );
 
+  const saveRippleToVault = useCallback(
+    async (ripple, tripId) => {
+      if (!ripple || !tripId) return;
+      const sender = stateRef.current.members.find((m) => m.id === ripple.memberId);
+      const addedBy = sender?.nickname || sender?.name || 'Fish';
+      const photoId = `ph-ripple-${ripple.id}`;
+
+      await updateTrip(tripId, (prev) => {
+        const existing = prev.photos ?? [];
+        if (existing.some((p) => p.id === photoId)) return prev;
+        return {
+          ...prev,
+          photos: [
+            ...existing,
+            {
+              id: photoId,
+              url: ripple.imageUrl,
+              caption: ripple.caption || ripple.place || 'Sky Ripple',
+              addedBy,
+            },
+          ],
+        };
+      });
+    },
+    [updateTrip],
+  );
+
+  const createRipple = useCallback(
+    async ({ imageUrl, caption = '', place = '', tripId = '' }) => {
+      if (!imageUrl) return null;
+      const id = `ripple-${crypto.randomUUID()}`;
+      const createdAt = new Date().toISOString();
+
+      let finalUrl = imageUrl;
+      try {
+        if (client && String(imageUrl).startsWith('data:')) {
+          finalUrl = await uploadImage(client, `ripples/${currentMemberId}`, imageUrl, {
+            maxWidth: 1200,
+            quality: 0.84,
+          });
+        }
+
+        const newRipple = {
+          id,
+          memberId: currentMemberId,
+          imageUrl: finalUrl,
+          caption: caption.trim(),
+          place: place.trim(),
+          tripId: tripId || '',
+          createdAt,
+          reactions: {},
+          notes: [],
+        };
+
+        const nextRipples = [newRipple, ...stateRef.current.ripples];
+        setRipples(nextRipples);
+
+        if (!client) {
+          saveLocal('fish-local-ripples', nextRipples);
+        } else {
+          await apiCreateRipple(client, newRipple);
+        }
+
+        if (tripId) {
+          await saveRippleToVault(newRipple, tripId);
+        }
+
+        return newRipple;
+      } catch (err) {
+        setSyncError(err?.message || 'Không thể gửi khoảnh khắc lên mặt hồ.');
+        refresh({ silent: true });
+        return null;
+      }
+    },
+    [client, currentMemberId, refresh, saveRippleToVault],
+  );
+
+  const deleteRipple = useCallback(
+    async (rippleId) => {
+      const target = stateRef.current.ripples.find((r) => r.id === rippleId);
+      if (!target || target.memberId !== currentMemberId) return;
+
+      const nextRipples = stateRef.current.ripples.filter((r) => r.id !== rippleId);
+      setRipples(nextRipples);
+
+      if (!client) {
+        saveLocal('fish-local-ripples', nextRipples);
+        return;
+      }
+
+      try {
+        await apiDeleteRipple(client, rippleId);
+      } catch (err) {
+        setSyncError(err?.message || 'Không thể xóa ảnh này.');
+        refresh({ silent: true });
+      }
+    },
+    [client, currentMemberId, refresh],
+  );
+
+  const toggleRippleReaction = useCallback(
+    async (rippleId, emoji) => {
+      const target = stateRef.current.ripples.find((r) => r.id === rippleId);
+      if (!target) return;
+
+      const currentList = target.reactions?.[emoji] ?? [];
+      const selected = !currentList.includes(currentMemberId);
+      const nextEmojiList = selected
+        ? [...currentList, currentMemberId]
+        : currentList.filter((id) => id !== currentMemberId);
+
+      const nextReactions = { ...target.reactions };
+      if (nextEmojiList.length > 0) nextReactions[emoji] = nextEmojiList;
+      else delete nextReactions[emoji];
+
+      const nextRipples = stateRef.current.ripples.map((r) =>
+        r.id === rippleId ? { ...r, reactions: nextReactions } : r,
+      );
+      setRipples(nextRipples);
+
+      if (!client) {
+        saveLocal('fish-local-ripples', nextRipples);
+        return;
+      }
+
+      try {
+        await apiSetRippleReaction(client, {
+          rippleId,
+          memberId: currentMemberId,
+          emoji,
+          selected,
+        });
+      } catch (err) {
+        setSyncError(err?.message || 'Không thể cập nhật cảm xúc.');
+        refresh({ silent: true });
+      }
+    },
+    [client, currentMemberId, refresh],
+  );
+
+  const addRippleNote = useCallback(
+    async (rippleId, text) => {
+      const trimmed = String(text || '').trim();
+      if (!trimmed) return;
+
+      const note = {
+        id: `rn-${crypto.randomUUID()}`,
+        rippleId,
+        memberId: currentMemberId,
+        text: trimmed,
+        createdAt: new Date().toISOString(),
+      };
+
+      const nextRipples = stateRef.current.ripples.map((r) =>
+        r.id === rippleId ? { ...r, notes: [...(r.notes ?? []), note] } : r,
+      );
+      setRipples(nextRipples);
+
+      if (!client) {
+        saveLocal('fish-local-ripples', nextRipples);
+        return;
+      }
+
+      try {
+        await apiAddRippleNote(client, note);
+      } catch (err) {
+        setSyncError(err?.message || 'Không thể gửi ghi chú.');
+        refresh({ silent: true });
+      }
+    },
+    [client, currentMemberId, refresh],
+  );
+
+  const deleteRippleNote = useCallback(
+    async (rippleId, noteId) => {
+      const targetRipple = stateRef.current.ripples.find((r) => r.id === rippleId);
+      const targetNote = targetRipple?.notes?.find((n) => n.id === noteId);
+      if (!targetNote || targetNote.memberId !== currentMemberId) return;
+
+      const nextRipples = stateRef.current.ripples.map((r) =>
+        r.id === rippleId
+          ? { ...r, notes: (r.notes ?? []).filter((n) => n.id !== noteId) }
+          : r,
+      );
+      setRipples(nextRipples);
+
+      if (!client) {
+        saveLocal('fish-local-ripples', nextRipples);
+        return;
+      }
+
+      try {
+        await apiDeleteRippleNote(client, noteId);
+      } catch (err) {
+        setSyncError(err?.message || 'Không thể xóa ghi chú.');
+        refresh({ silent: true });
+      }
+    },
+    [client, currentMemberId, refresh],
+  );
+
   return {
     members,
     polls,
     outings,
     busyDays,
+    ripples,
     loading,
     syncError,
     dismissError,
@@ -443,5 +712,11 @@ export function useGroupData(client, currentMemberId, people) {
     changeOutingStatus,
     toggleBusy,
     addBusyDays,
+    createRipple,
+    deleteRipple,
+    toggleRippleReaction,
+    addRippleNote,
+    deleteRippleNote,
+    saveRippleToVault,
   };
 }

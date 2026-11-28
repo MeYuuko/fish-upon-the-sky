@@ -1,57 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-
-function TabBarIcon({ name }) {
-  const common = {
-    className: 'lgt-ic',
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.9,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    'aria-hidden': 'true',
-  };
-
-  if (name === 'home') {
-    return (
-      <svg {...common}>
-        <path d="m3.5 10 8.5-7 8.5 7" />
-        <path d="M5.5 9v10h13V9M9 19v-6h6v6" />
-      </svg>
-    );
-  }
-  if (name === 'calendar') {
-    return (
-      <svg {...common}>
-        <rect x="3.5" y="5" width="17" height="16" rx="3" />
-        <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" />
-        <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" />
-      </svg>
-    );
-  }
-  if (name === 'spark') {
-    return (
-      <svg {...common}>
-        <path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
-        <path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z" />
-      </svg>
-    );
-  }
-  if (name === 'folder') {
-    return (
-      <svg {...common}>
-        <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2.5h7A2.5 2.5 0 0 1 21 9v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5V6.5Z" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 4.8" />
-    </svg>
-  );
-}
+import BrandIcon from './BrandIcon.jsx';
 
 // Damped spring constants from 21st.dev LiquidGlassTabBar (~14% overshoot, peak ~0.33s)
 const ZETA = 0.53;
@@ -190,7 +139,7 @@ export default function LiquidGlassTabBar({
             style={{ '--lgt-nudge': `${nudge}px` }}
             onClick={() => onChange?.(item.id)}
           >
-            <TabBarIcon name={item.icon} />
+            <BrandIcon name={item.icon} size={20} strokeWidth={1.75} className="lgt-ic" />
             <span className="lgt-lbl">{item.label}</span>
             {item.count !== undefined && variant === 'header' && (
               <sup className="lgt-count">{String(item.count).padStart(2, '0')}</sup>

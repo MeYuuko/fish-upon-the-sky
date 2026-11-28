@@ -1,6 +1,9 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, Fragment, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import logo from '../../Logo/Logo.svg';
+import logoLight from '../../Logo/Logo.svg';
+import logoDark from '../../Logo/Logo white verse.svg';
+
+const AuthThemeContext = createContext('dark');
 
 const ringSizes = [300, 372, 452, 542, 644, 758, 884, 1000];
 const memberDotColors = ['blue', 'lemon', 'cream', 'sky', 'cream', 'lemon', 'blue'];
@@ -287,6 +290,7 @@ export function AuthLayout({ children, hovering = false }) {
   const toggleTheme = () => setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
 
   return (
+    <AuthThemeContext.Provider value={theme}>
     <div ref={portalRef} className={`auth-page${theme === 'dark' ? ' theme-dark' : ''}${hovering ? ' is-hovering' : ''}`}>
       <PortalBackground portalRef={portalRef} reduceMotion={reduceMotion} />
 
@@ -298,7 +302,7 @@ export function AuthLayout({ children, hovering = false }) {
       >
         <div className="auth-brand">
           <span className="auth-brand-badge">
-            <img src={logo} alt="" />
+            <img src={theme === 'dark' ? logoDark : logoLight} alt="" />
           </span>
           <span>Fish Upon The Sky</span>
         </div>
@@ -349,6 +353,16 @@ export function AuthLayout({ children, hovering = false }) {
         </span>
       </motion.footer>
     </div>
+    </AuthThemeContext.Provider>
+  );
+}
+
+function AuthBrandMark({ itemProps }) {
+  const theme = useContext(AuthThemeContext);
+  return (
+    <motion.div className="auth-mark" {...itemProps}>
+      <img src={theme === 'dark' ? logoDark : logoLight} alt="" />
+    </motion.div>
   );
 }
 
@@ -580,9 +594,7 @@ export default function AuthEntry({
     <AuthLayout hovering={hovering}>
       <AnimatePresence mode="wait">
         <motion.div className="auth-inner" key={screen} {...motionProps}>
-          <motion.div className="auth-mark" {...itemProps}>
-            <img src={logo} alt="" />
-          </motion.div>
+          <AuthBrandMark itemProps={itemProps} />
 
           {screen !== 'signIn' && (
             <motion.div className="auth-back-wrap" {...itemProps}>

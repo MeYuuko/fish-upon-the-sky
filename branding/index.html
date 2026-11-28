@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fish Upon The Sky — Hệ Thống Icons Thương Hiệu</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --white-solid: #F4F5FA;
+      --veiling-waterfalls: #D4EAFF;
+      --lemon-pie: #F1FF62;
+      --dynamic-blue: #0192C6;
+      --fright-night: #004499;
+      --fibonacci-blue: #112358;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    .font-display {
+      font-family: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    /* Theme variables */
+    body.theme-dark {
+      background-color: #0d1b46;
+      color: #F4F5FA;
+      --surface-bg: #112358;
+      --surface-card: #152b69;
+      --surface-card-hover: #1b3680;
+      --surface-border: rgba(212, 234, 255, 0.14);
+      --surface-border-strong: rgba(1, 146, 198, 0.45);
+      --text-primary: #F4F5FA;
+      --text-secondary: #D4EAFF;
+      --text-muted: rgba(212, 234, 255, 0.65);
+      --chip-bg: rgba(0, 68, 153, 0.45);
+      --chip-active-bg: #F1FF62;
+      --chip-active-text: #112358;
+      --input-bg: #0c183d;
+    }
+
+    body.theme-light {
+      background-color: #F4F5FA;
+      color: #112358;
+      --surface-bg: #FFFFFF;
+      --surface-card: #FFFFFF;
+      --surface-card-hover: #f8fbff;
+      --surface-border: rgba(17, 35, 88, 0.11);
+      --surface-border-strong: rgba(1, 146, 198, 0.55);
+      --text-primary: #112358;
+      --text-secondary: #004499;
+      --text-muted: rgba(17, 35, 88, 0.6);
+      --chip-bg: #e7f2ff;
+      --chip-active-bg: #112358;
+      --chip-active-text: #F1FF62;
+      --input-bg: #FFFFFF;
+    }
+
+    .chamfer {
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+
+    .chamfer-sm {
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+    }
+
+    .card-surface {
+      background-color: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .card-surface:hover {
+      background-color: var(--surface-card-hover);
+      border-color: var(--surface-border-strong);
+      transform: translateY(-2px);
+    }
+
+    .icon-grid-bg {
+      background-image:
+        linear-gradient(to right, rgba(1, 146, 198, 0.18) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(1, 146, 198, 0.18) 1px, transparent 1px);
+      background-size: calc(100% / 24) calc(100% / 24);
+    }
+
+    .deep-sky-grad {
+      background: linear-gradient(135deg, #112358 0%, #004499 45%, #0192C6 82%, #F1FF62 100%);
+    }
+
+    .light-aura-grad {
+      background: linear-gradient(180deg, #f8ffb8 0%, #F4F5FA 35%, #D4EAFF 75%, #0192C6 100%);
+    }
+
+    /* Custom range slider */
+    input[type="range"] {
+      accent-color: #0192C6;
+    }
+
+    /* Toast animation */
+    #toast {
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    #toast.hidden-toast {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="theme-dark min-h-screen antialiased selection:bg-[#F1FF62] selection:text-[#112358]">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 border-b backdrop-blur-md" style="background-color: color-mix(in srgb, var(--surface-bg) 88%, transparent); border-color: var(--surface-border);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <!-- Brand Lockup -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 flex items-center justify-center shrink-0">
+          <!-- Custom Origami Fish Brand Mark -->
+          <svg viewBox="0 0 64 48" class="w-10 h-8" aria-label="Fish Upon The Sky Logo">
+            <polygon points="4,19 16,24 8,36 12,26" fill="#F1FF62" />
+            <polygon points="8,36 27,15 44,17 44,24" fill="#D4EAFF" />
+            <polygon points="27,15 23,9 44,13 44,17" fill="#F4F5FA" />
+            <polygon points="21,29 44,24 60,10 39,38" fill="#F1FF62" />
+            <polygon points="44,13 60,10 44,19" fill="#D4EAFF" />
+            <polygon points="44,19 60,10 44,24" fill="#0192C6" />
+            <path d="M44 13 Q44 18 48 18 Q44 18 44 23 Q44 18 40 18 Q44 18 44 13 Z" fill="#112358" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="font-display font-bold text-sm sm:text-base tracking-wider uppercase truncate flex items-center gap-1.5" style="color: var(--text-primary);">
+            <span>FISH UPON THE SKY</span>
+            <span class="text-[#F1FF62] text-xs">✦</span>
+          </div>
+          <p class="text-[11px] truncate" style="color: var(--text-muted);">Hệ thống 32 Icon Vector Origami · Nhóm 07</p>
+        </div>
+      </div>
+
+      <!-- Primary Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 p-1 rounded-lg" style="background-color: var(--chip-bg);">
+        <button id="nav-library" type="button" class="nav-tab px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors">Thư viện Icons (32)</button>
+        <button id="nav-guidelines" type="button" class="nav-tab px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors">Quy chuẩn & Bảng màu</button>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btn-export-sheet" type="button" class="chamfer-sm px-3 py-1.5 text-xs font-bold bg-[#F1FF62] text-[#112358] hover:brightness-95 transition flex items-center gap-1.5 cursor-pointer" title="Tải toàn bộ 32 icon trong 1 file SVG để mở bằng Figma/Illustrator">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square">
+            <path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>
+          </svg>
+          <span class="hidden sm:inline">Tải trọn bộ SVG</span>
+          <span class="sm:hidden">SVG</span>
+        </button>
+
+        <button id="btn-theme-toggle" type="button" class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition" style="border-color: var(--surface-border); color: var(--text-primary); background-color: var(--surface-card);" title="Chuyển chế độ Sáng / Tối">
+          <span id="theme-icon">☀️</span>
+          <span id="theme-label" class="hidden sm:inline">Light</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Tab Bar -->
+    <div class="flex md:hidden border-t px-4 py-2 gap-2" style="border-color: var(--surface-border);">
+      <button id="nav-library-mobile" type="button" class="nav-tab-mobile flex-1 py-1.5 rounded-md text-xs font-semibold text-center">Thư viện Icons (32)</button>
+      <button id="nav-guidelines-mobile" type="button" class="nav-tab-mobile flex-1 py-1.5 rounded-md text-xs font-semibold text-center">Quy chuẩn & Bảng màu</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- VIEW 1: ICON LIBRARY -->
+    <section id="view-library">
+      <!-- Compact Hero Banner -->
+      <div class="relative overflow-hidden chamfer p-5 sm:p-7 mb-6 border" style="background: linear-gradient(125deg, #112358 0%, #004499 68%, #0192C6 100%); border-color: rgba(212, 234, 255, 0.2);">
+        <!-- Decorative Origami Facets -->
+        <svg class="pointer-events-none absolute right-0 top-0 h-full w-72 opacity-20" viewBox="0 0 280 180" preserveAspectRatio="none">
+          <polygon points="110,0 280,0 280,180 40,180" fill="#0192C6"/>
+          <polygon points="180,0 280,0 280,120 120,90" fill="#D4EAFF"/>
+          <polygon points="220,180 280,110 280,180" fill="#F1FF62"/>
+        </svg>
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-[#F1FF62] text-[#112358] mb-3">
+              <span>✦ Geometric & Sharp Duotone</span>
+              <span>·</span>
+              <span>24×24 Grid</span>
+            </div>
+            <h1 class="font-display text-2xl sm:text-3xl font-bold text-[#F4F5FA] leading-tight">
+              Hệ thống Icons cho <span class="text-[#F1FF62]">Fish Upon The Sky</span>
+            </h1>
+            <p class="mt-2 text-xs sm:text-sm text-[#D4EAFF] leading-relaxed">
+              Thiết kế đồng bộ từ nếp gấp origami, góc vát 45° và ngôi sao 4 cánh trên logo nhóm. Nhấn vào từng icon để xem lưới hình học, sao chép mã SVG dán thẳng vào <strong>Figma</strong> (<code class="px-1 py-0.5 rounded bg-white/10 text-[#F1FF62]">Ctrl+V</code>) hoặc tải file <code>.svg</code> / <code>.png</code> cho Canva & Illustrator.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            <div class="px-3.5 py-2.5 rounded-lg bg-[#112358]/70 border border-[#D4EAFF]/20 text-center min-w-[84px]">
+              <div class="font-display text-lg font-bold text-[#F1FF62]">32</div>
+              <div class="text-[11px] text-[#D4EAFF]">Vector Icons</div>
+            </div>
+            <div class="px-3.5 py-2.5 rounded-lg bg-[#112358]/70 border border-[#D4EAFF]/20 text-center min-w-[84px]">
+              <div class="font-display text-lg font-bold text-[#F4F5FA]">3</div>
+              <div class="text-[11px] text-[#D4EAFF]">Biến thể</div>
+            </div>
+            <div class="px-3.5 py-2.5 rounded-lg bg-[#112358]/70 border border-[#D4EAFF]/20 text-center min-w-[84px]">
+              <div class="font-display text-lg font-bold text-[#0192C6]">07</div>
+              <div class="text-[11px] text-[#D4EAFF]">Thành viên</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Controls Bar -->
+      <div class="rounded-xl p-4 mb-6 border flex flex-col gap-4" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+        <div class="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
+          <!-- Search Input -->
+          <div class="relative flex-1 max-w-md">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style="color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="10,3 17,6 17,14 10,17 3,14 3,6"/>
+              <line x1="15.5" y1="15.5" x2="21" y2="21"/>
+            </svg>
+            <input id="search-input" type="text" placeholder="Tìm icon (ví dụ: cá, sao, nhóm, slide, tải...)" class="w-full pl-9 pr-8 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-[#0192C6]" style="background-color: var(--input-bg); border-color: var(--surface-border); color: var(--text-primary);" />
+            <button id="btn-clear-search" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded hover:opacity-80 cursor-pointer" style="color: var(--text-muted);">✕</button>
+          </div>
+
+          <!-- Style Mode Switcher -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold" style="color: var(--text-muted);">Kiểu hiển thị:</span>
+            <div class="inline-flex p-1 rounded-lg gap-1" style="background-color: var(--chip-bg);">
+              <button type="button" data-style="duotone" class="style-btn px-3 py-1 rounded text-xs font-semibold cursor-pointer transition">Duotone</button>
+              <button type="button" data-style="outline" class="style-btn px-3 py-1 rounded text-xs font-semibold cursor-pointer transition">Nét mảnh</button>
+              <button type="button" data-style="badge" class="style-btn px-3 py-1 rounded text-xs font-semibold cursor-pointer transition">Khung Origami ✦</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 md:items-center justify-between pt-3 border-t" style="border-color: var(--surface-border);">
+          <!-- Category Filter Pills -->
+          <div id="category-filters" class="flex flex-wrap gap-1.5">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Size & Stroke Sliders -->
+          <div class="flex flex-wrap items-center gap-4 text-xs">
+            <label class="flex items-center gap-2">
+              <span style="color: var(--text-muted);">Cỡ:</span>
+              <input id="size-slider" type="range" min="24" max="64" step="8" value="40" class="w-20 cursor-pointer" />
+              <span id="size-value" class="font-display font-bold w-9 text-right" style="color: var(--text-primary);">40px</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <span style="color: var(--text-muted);">Nét:</span>
+              <input id="stroke-slider" type="range" min="1.25" max="2.5" step="0.25" value="1.75" class="w-20 cursor-pointer" />
+              <span id="stroke-value" class="font-display font-bold w-10 text-right" style="color: var(--text-primary);">1.75px</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Counter -->
+      <div class="flex items-center justify-between mb-4 text-xs" style="color: var(--text-muted);">
+        <span id="result-count">Đang hiển thị 32 / 32 icons</span>
+        <span>Nhấn <strong>Copy SVG</strong> để dán thẳng vào Figma</span>
+      </div>
+
+      <!-- Icons Grid -->
+      <div id="icons-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-14 rounded-xl border" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+        <div class="text-2xl mb-2">✦</div>
+        <p class="font-semibold text-sm" style="color: var(--text-primary);">Không tìm thấy icon phù hợp</p>
+        <p class="text-xs mt-1 mb-4" style="color: var(--text-muted);">Thử tìm với từ khóa khác hoặc đặt lại bộ lọc danh mục.</p>
+        <button id="btn-reset-filters" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#0192C6] text-white cursor-pointer">Đặt lại bộ lọc</button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: BRAND GUIDELINES & SPECS -->
+    <section id="view-guidelines" class="hidden space-y-6">
+      <!-- Palette Grid -->
+      <div class="rounded-xl p-5 sm:p-6 border" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="font-display text-lg font-bold" style="color: var(--text-primary);">Bảng màu chính thức (6 Color Tokens)</h2>
+            <p class="text-xs" style="color: var(--text-muted);">Nhấn vào từng ô màu để sao chép mã HEX áp dụng cho icon và ấn phẩm.</p>
+          </div>
+          <span class="text-[11px] font-semibold px-2.5 py-1 rounded bg-[#0192C6]/20 text-[#0192C6] self-start">Quy tắc 60 – 30 – 10</span>
+        </div>
+
+        <div id="palette-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+          <div class="rounded-lg p-4 deep-sky-grad text-[#F4F5FA] flex items-end justify-between min-h-[76px]">
+            <div>
+              <div class="font-display font-bold text-xs uppercase tracking-wider">Deep Sky Gradient</div>
+              <div class="text-[11px] opacity-90">#112358 → #004499 → #0192C6 → #F1FF62</div>
+            </div>
+            <span class="text-xs font-bold bg-[#112358]/70 px-2 py-0.5 rounded">Dark Mode</span>
+          </div>
+          <div class="rounded-lg p-4 light-aura-grad text-[#112358] flex items-end justify-between min-h-[76px] border border-[#112358]/10">
+            <div>
+              <div class="font-display font-bold text-xs uppercase tracking-wider">Light Aura Gradient</div>
+              <div class="text-[11px] opacity-85">#F1FF62 → #F4F5FA → #D4EAFF → #0192C6</div>
+            </div>
+            <span class="text-xs font-bold bg-white/80 px-2 py-0.5 rounded">Light Mode</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Geometry & Construction Rules -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-xl p-5 border" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+          <div class="text-[#F1FF62] bg-[#112358] w-8 h-8 chamfer-sm flex items-center justify-center font-display font-bold text-xs mb-3">01</div>
+          <h3 class="font-display font-bold text-sm mb-1.5" style="color: var(--text-primary);">Lưới 24×24 & Vát góc 45°</h3>
+          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            Mọi icon xây dựng trên khung <code class="font-semibold">viewBox="0 0 24 24"</code> với vùng an toàn 2px. Hạn chế bo tròn mềm, thay bằng đường cắt vát 45° đồng bộ nếp gấp origami của logo và nét sắc của font <strong>Calvera</strong>.
+          </p>
+        </div>
+
+        <div class="rounded-xl p-5 border" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+          <div class="text-[#F1FF62] bg-[#112358] w-8 h-8 chamfer-sm flex items-center justify-center font-display font-bold text-xs mb-3">02</div>
+          <h3 class="font-display font-bold text-sm mb-1.5" style="color: var(--text-primary);">Cấu trúc 3 lớp Duotone</h3>
+          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            <strong>Lớp nét chính:</strong> <code>#112358</code> (nền sáng) hoặc <code>#F4F5FA</code> (nền tối).<br/>
+            <strong>Lớp mảng gấp:</strong> <code>#D4EAFF</code> / <code>#0192C6</code>.<br/>
+            <strong>Lớp điểm nhấn:</strong> <code>#F1FF62</code> (Lemon Pie) cho chi tiết lõi hoặc tia sao ✦.
+          </p>
+        </div>
+
+        <div class="rounded-xl p-5 border" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+          <div class="text-[#F1FF62] bg-[#112358] w-8 h-8 chamfer-sm flex items-center justify-center font-display font-bold text-xs mb-3">03</div>
+          <h3 class="font-display font-bold text-sm mb-1.5" style="color: var(--text-primary);">Quy trình Figma / Canva</h3>
+          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            <strong>Figma:</strong> Nhấn <em>Copy SVG</em> rồi <code>Ctrl+V</code> trực tiếp lên canvas để tách lớp vector.<br/>
+            <strong>Canva / AI:</strong> Tải file <code>.svg</code> lẻ hoặc <em>Tải trọn bộ SVG</em> rồi kéo thả vào dự án để đổi màu tự do.
+          </p>
+        </div>
+      </div>
+
+      <!-- Typography Pairing Note -->
+      <div class="rounded-xl p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="background-color: var(--surface-card); border-color: var(--surface-border);">
+        <div>
+          <h3 class="font-display font-bold text-sm" style="color: var(--text-primary);">Cặp Font đi kèm hệ thống Icons</h3>
+          <p class="text-xs mt-1" style="color: var(--text-muted);">
+            <strong>Calvera</strong> cho tiêu đề ngắn cạnh icon cỡ 32–48px (nét 2px) · <strong>NANGNexaPro</strong> cho nhãn điều hướng & body text cạnh icon cỡ 16–24px (nét 1.5–1.75px).
+          </p>
+        </div>
+        <button id="btn-back-to-icons" type="button" class="chamfer-sm px-4 py-2 text-xs font-bold bg-[#0192C6] text-white hover:brightness-110 transition cursor-pointer shrink-0">
+          Quay lại Thư viện Icons →
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Icon Inspector Modal -->
+  <div id="inspector-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#070f26]/75 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-2xl border overflow-hidden shadow-2xl" style="background-color: var(--surface-bg); border-color: var(--surface-border-strong);">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b flex items-center justify-between gap-3" style="border-color: var(--surface-border);">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h2 id="modal-title" class="font-display font-bold text-base truncate" style="color: var(--text-primary);">Icon Name</h2>
+            <span id="modal-category" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-[#0192C6]/20 text-[#0192C6]">Category</span>
+          </div>
+          <p id="modal-id" class="text-xs font-mono mt-0.5" style="color: var(--text-muted);">futs-fish</p>
+        </div>
+        <button id="btn-close-modal" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center border hover:opacity-80 cursor-pointer" style="border-color: var(--surface-border); color: var(--text-primary);" aria-label="Đóng">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+        <!-- Preview Stage across surfaces -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Main Zoom Preview with optional 24x24 grid -->
+          <div class="sm:col-span-2 rounded-xl border p-4 flex flex-col items-center justify-center relative min-h-[190px]" id="modal-stage-main" style="border-color: var(--surface-border);">
+            <button id="btn-toggle-grid" type="button" class="absolute top-2.5 right-2.5 px-2 py-1 rounded text-[11px] font-semibold border cursor-pointer transition" style="border-color: var(--surface-border); background-color: var(--surface-card); color: var(--text-primary);">
+              Lưới 24×24: Tắt
+            </button>
+            <div id="modal-preview-box" class="w-32 h-32 flex items-center justify-center rounded-lg">
+              <!-- SVG rendered here -->
+            </div>
+            <p id="modal-desc" class="text-xs text-center mt-2" style="color: var(--text-muted);"></p>
+          </div>
+
+          <!-- Contrast Swatches (Dark / Light / Deep Sky) -->
+          <div class="flex flex-col gap-2.5">
+            <div class="flex-1 rounded-xl p-3 bg-[#112358] border border-[#D4EAFF]/20 flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-[#D4EAFF]">Dark Mode</span>
+              <div id="modal-preview-dark" class="w-10 h-10 flex items-center justify-center"></div>
+            </div>
+            <div class="flex-1 rounded-xl p-3 bg-[#F4F5FA] border border-[#112358]/15 flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-[#112358]">Light Mode</span>
+              <div id="modal-preview-light" class="w-10 h-10 flex items-center justify-center"></div>
+            </div>
+            <div class="flex-1 rounded-xl p-3 deep-sky-grad flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-[#F4F5FA]">Deep Sky</span>
+              <div id="modal-preview-grad" class="w-10 h-10 flex items-center justify-center"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Action Buttons -->
+        <div class="flex flex-wrap gap-2.5">
+          <button id="modal-copy-svg" type="button" class="chamfer-sm flex-1 min-w-[140px] py-2.5 px-4 bg-[#F1FF62] text-[#112358] font-bold text-xs hover:brightness-95 transition cursor-pointer flex items-center justify-center gap-2">
+            <span>Copy mã SVG (Figma)</span>
+          </button>
+          <button id="modal-download-svg" type="button" class="flex-1 min-w-[130px] py-2.5 px-4 rounded-lg bg-[#0192C6] text-white font-bold text-xs hover:brightness-110 transition cursor-pointer">
+            Tải file .SVG
+          </button>
+          <button id="modal-download-png" type="button" class="flex-1 min-w-[130px] py-2.5 px-4 rounded-lg border font-bold text-xs hover:opacity-85 transition cursor-pointer" style="border-color: var(--surface-border-strong); color: var(--text-primary);">
+            Tải ảnh .PNG (512px)
+          </button>
+        </div>
+
+        <!-- SVG Code Snippet -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-semibold" style="color: var(--text-secondary);">Mã nguồn SVG chuẩn Vector</span>
+            <span id="modal-meta-badge" class="text-[11px] font-mono" style="color: var(--text-muted);"></span>
+          </div>
+          <pre id="modal-svg-code" class="p-3 rounded-lg text-[11px] font-mono overflow-x-auto max-h-40 border leading-relaxed" style="background-color: var(--input-bg); border-color: var(--surface-border); color: var(--text-secondary);"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden-toast fixed bottom-5 right-5 z-50 px-4 py-2.5 chamfer-sm bg-[#F1FF62] text-[#112358] text-xs font-bold shadow-xl flex items-center gap-2">
+    <span>✦</span>
+    <span id="toast-message">Đã sao chép SVG!</span>
+  </div>
+
+  <script>
+    // =========================================================
+    // 1. BRAND COLOR PALETTE & ICON DEFINITIONS (32 ICONS)
+    // =========================================================
+    const PALETTE = [
+      { name: 'White Solid', hex: '#F4F5FA', role: 'Nền sáng / Chữ Dark', contrast: '19.29:1', textDark: true },
+      { name: 'Veiling Waterfalls', hex: '#D4EAFF', role: 'Mảng gấp Duotone sáng', contrast: '17.01:1', textDark: true },
+      { name: 'Lemon Pie', hex: '#F1FF62', role: 'Màu nhấn / Ngôi sao ✦', contrast: '19.22:1', textDark: true },
+      { name: 'Dynamic Blue', hex: '#0192C6', role: 'Xanh chủ đạo / Viền phụ', contrast: '3.54:1', textDark: false },
+      { name: 'Fright Night', hex: '#004499', role: 'Khối đậm / Sub-heading', contrast: '9.18:1', textDark: false },
+      { name: 'Fibonacci Blue', hex: '#112358', role: 'Nền tối / Nét chính', contrast: '14.94:1', textDark: false }
+    ];
+
+    const CATEGORIES = [
+      { id: 'all', label: 'Tất cả (32)' },
+      { id: 'brand', label: 'Thương hiệu (8)' },
+      { id: 'team', label: 'Nhóm 07 (8)' },
+      { id: 'design', label: 'Thiết kế (8)' },
+      { id: 'ui', label: 'Giao diện UI (8)' }
+    ];
+
+    // Each icon returns clean geometric layers using tokens:
+    // { fill, stroke, accent, accentStroke, sw }
+    const ICONS = [
+      // --- CATEGORY 1: BRAND & SIGNATURE (8) ---
+      {
+        id: 'futs-fish',
+        name: 'Cá Origami',
+        en: 'Origami Fish',
+        category: 'brand',
+        tags: 'ca origami logo fish sky thuong hieu',
+        desc: 'Biểu tượng cốt lõi lấy cảm hứng trực tiếp từ logo cá giấy bay lên bầu trời của nhóm.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="5,17 11,8 17,9 22,6 15,18 9,15" fill="${c.fill}" />` : ''}
+          ${c.showFill ? `<polygon points="10,15 17,11 22,6 15,18" fill="${c.accent}" fill-opacity="${c.accentFillOp}" />` : ''}
+          <polygon points="2,11 6,13 4,17 5,13.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="5,17 11,8 17,9 22,6 15,18 9,15" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="9,15 17,11 22,6" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+          <path d="M16.5 8.2 Q16.5 10.5 18.5 10.5 Q16.5 10.5 16.5 12.8 Q16.5 10.5 14.5 10.5 Q16.5 10.5 16.5 8.2 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-paper-plane',
+        name: 'Máy bay giấy',
+        en: 'Paper Plane',
+        category: 'brand',
+        tags: 'may bay giay send gui bay origami',
+        desc: 'Họa tiết cánh giấy vút lên góc trên phải, thể hiện tinh thần bứt phá và gửi thông điệp.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="3,11 21,3 14,21 11,13" fill="${c.fill}" />` : ''}
+          ${c.showFill ? `<polygon points="11,13 21,3 14,21" fill="${c.accent}" fill-opacity="${c.accentFillOp}" />` : ''}
+          <polygon points="3,11 21,3 14,21 11,13" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="11" y1="13" x2="21" y2="3" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <path d="M5 17.5 Q5 19.5 7 19.5 Q5 19.5 5 21.5 Q5 19.5 3 19.5 Q5 19.5 5 17.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-spark',
+        name: 'Ngôi sao 4 cánh',
+        en: 'Signature Spark',
+        category: 'brand',
+        tags: 'sao star sparkle diem nhan mat ca',
+        desc: 'Ngôi sao 4 cánh trích xuất từ mắt cá trong logo, dùng làm dấu đầu dòng hoặc điểm sáng.',
+        draw: (c) => `
+          ${c.showFill ? `<path d="M12 2.5 Q12 12 21.5 12 Q12 12 12 21.5 Q12 12 2.5 12 Q12 12 12 2.5 Z" fill="${c.fill}" />` : ''}
+          <path d="M12 2.5 Q12 12 21.5 12 Q12 12 12 21.5 Q12 12 2.5 12 Q12 12 12 2.5 Z" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <path d="M12 7.5 Q12 12 16.5 12 Q12 12 12 16.5 Q12 12 7.5 12 Q12 12 12 7.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-constellation',
+        name: 'Chòm sao 07',
+        en: '7-Star Constellation',
+        category: 'brand',
+        tags: 'chom sao 7 thanh vien ket noi network',
+        desc: '7 điểm sao nối liền theo trục chéo hướng lên, đại diện cho 7 cá tính trong Fish Upon The Sky.',
+        draw: (c) => `
+          <polyline points="3,19 7,15 11,17 13,11 17,13 19,7 21,4" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" stroke-dasharray="2 1.5" />
+          <rect x="2" y="18" width="2.2" height="2.2" transform="rotate(45 3.1 19.1)" fill="${c.stroke}" />
+          <rect x="6" y="14" width="2.2" height="2.2" transform="rotate(45 7.1 15.1)" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.2" />
+          <rect x="10" y="16" width="2.2" height="2.2" transform="rotate(45 11.1 17.1)" fill="${c.stroke}" />
+          <rect x="12" y="10" width="2.4" height="2.4" transform="rotate(45 13.2 11.2)" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.2" />
+          <rect x="16" y="12" width="2.2" height="2.2" transform="rotate(45 17.1 13.1)" fill="${c.stroke}" />
+          <path d="M19 3.8 Q19 7 22.2 7 Q19 7 19 10.2 Q19 7 15.8 7 Q19 7 19 3.8 Z" fill="${c.accent}" />
+          <rect x="20" y="3" width="1.8" height="1.8" transform="rotate(45 20.9 3.9)" fill="${c.stroke}" />
+        `
+      },
+      {
+        id: 'futs-wave',
+        name: 'Sóng hình học',
+        en: 'Origami Wave',
+        category: 'brand',
+        tags: 'song nuoc bien wave flow',
+        desc: 'Đường sóng gấp khúc sắc cạnh thay cho đường cong mềm, giữ nguyên chất geometric.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="2,14 7,9 12,14 17,9 22,14 22,19 2,19" fill="${c.fill}" />` : ''}
+          <polyline points="2,12 7,7 12,12 17,7 22,12" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="2,17.5 7,12.5 12,17.5 17,12.5 22,17.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="17,5 18.5,6.5 17,8 15.5,6.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-cloud',
+        name: 'Mây đa giác',
+        en: 'Polygon Cloud',
+        category: 'brand',
+        tags: 'may bau troi sky cloud luu tru',
+        desc: 'Đám mây tạo hình từ đa giác vát góc 45°, đại diện cho yếu tố "The Sky" và lưu trữ đám mây.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="6,19 3,16 3,13 6,10 8,10 11,6 16,6 19,10 21,12 21,16 18,19" fill="${c.fill}" />` : ''}
+          <polygon points="6,19 3,16 3,13 6,10 8,10 11,6 16,6 19,10 21,12 21,16 18,19" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="11,6 13,12 19,10" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.75}" opacity="0.55" />
+          <path d="M18.5 3.5 Q18.5 5.5 20.5 5.5 Q18.5 5.5 18.5 7.5 Q18.5 5.5 16.5 5.5 Q18.5 5.5 18.5 3.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-compass',
+        name: 'La bàn định hướng',
+        en: 'Sky Compass',
+        category: 'brand',
+        tags: 'la ban dinh huong explore kham pha',
+        desc: 'Khung bát giác vát cạnh kết hợp kim la bàn hình thoi sắc bén, dùng cho mục Định hướng/Khám phá.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="${c.fill}" />` : ''}
+          <polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="15.5,8.5 13,13 8.5,15.5 11,11" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" stroke-linejoin="miter" />
+        `
+      },
+      {
+        id: 'futs-prism',
+        name: 'Lăng kính 7 mặt',
+        en: 'Origami Prism',
+        category: 'brand',
+        tags: 'lang kinh kim cuong gia tri gem crystal',
+        desc: 'Khối lăng kính đa diện tượng trưng cho giá trị cốt lõi và 7 góc nhìn sáng tạo.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="12,2.5 20,8 17,20.5 7,20.5 4,8" fill="${c.fill}" />` : ''}
+          <polygon points="12,2.5 20,8 17,20.5 7,20.5 4,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="4,8 12,11 20,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+          <line x1="12" y1="2.5" x2="12" y2="20.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.8}" />
+          <polygon points="12,8.5 14.5,11 12,13.5 9.5,11" fill="${c.accent}" />
+        `
+      },
+
+      // --- CATEGORY 2: TEAM & COLLABORATION (8) ---
+      {
+        id: 'futs-team',
+        name: 'Nhóm thành viên',
+        en: 'Team 07',
+        category: 'team',
+        tags: 'nhom thanh vien users people team',
+        desc: 'Biểu tượng đội nhóm dáng hình học lục giác vát cạnh, dùng cho trang Giới thiệu 7 thành viên.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="9,5 15,5 16,10 12,12 8,10" fill="${c.fill}" />` : ''}
+          ${c.showFill ? `<polygon points="5,20 7,15 17,15 19,20" fill="${c.fill}" />` : ''}
+          <polygon points="9.5,4.5 14.5,4.5 15.5,9.5 12,11.5 8.5,9.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="5,20 7,14.5 17,14.5 19,20" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="2,19 3.5,15 6,15" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polyline points="22,19 20.5,15 18,15" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="12,16.2 13.5,17.7 12,19.2 10.5,17.7" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-profile',
+        name: 'Hồ sơ cá nhân',
+        en: 'Member Card',
+        category: 'team',
+        tags: 'ho so the ten id card member profile',
+        desc: 'Thẻ thành viên vát 2 góc chéo theo chuẩn khung Avatar của Fish Upon The Sky.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="6,3 20,3 20,18 17,21 4,21 4,5" fill="${c.fill}" />` : ''}
+          <polygon points="6,3 20,3 20,18 17,21 4,21 4,5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="10,7.5 14,7.5 14,11.5 10,11.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polyline points="7.5,17.5 9.5,14.5 14.5,14.5 16.5,17.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="17.5,5.5 19,7 17.5,8.5 16,7" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-chat',
+        name: 'Thảo luận',
+        en: 'Chat Bubble',
+        category: 'team',
+        tags: 'thao luan tin nhan chat message comment',
+        desc: 'Hộp thoại vát góc origami, phù hợp cho mục Góp ý, Phản hồi hoặc Kênh trao đổi nhóm.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="5,4 21,4 21,15 18,18 9,18 4,21 4,7" fill="${c.fill}" />` : ''}
+          <polygon points="6,4 21,4 21,15 18,18 9,18 4,21 4,6" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="8" y1="9.5" x2="17" y2="9.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <line x1="8" y1="13" x2="13.5" y2="13" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <rect x="15.5" y="12" width="2.2" height="2.2" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-announcement',
+        name: 'Thông báo',
+        en: 'Megaphone',
+        category: 'team',
+        tags: 'thong bao loa su kien megaphone news',
+        desc: 'Loa thông báo đa giác góc cạnh dùng cho tin tức, bài đăng sự kiện và truyền thông.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="4,10 10,10 18,5 18,17 10,13 4,13" fill="${c.fill}" />` : ''}
+          <polygon points="4,9.5 10,9.5 18,5 18,17 10,13.5 4,13.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="7,13.5 9,19.5 12,19.5 10.5,13.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" stroke-linejoin="miter" />
+          <path d="M20.5 7.5 Q20.5 10 23 10 Q20.5 10 20.5 12.5 Q20.5 10 18 10 Q20.5 10 20.5 7.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-calendar',
+        name: 'Lịch trình',
+        en: 'Schedule',
+        category: 'team',
+        tags: 'lich trinh ngay thang su kien calendar date',
+        desc: 'Lịch sự kiện với góc vát dưới phải và điểm đánh dấu ngày quan trọng màu Lemon Pie.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="3,9 21,9 21,18 18,21 3,21" fill="${c.fill}" />` : ''}
+          <polygon points="3,5 21,5 21,18 18,21 3,21" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="3" y1="9.5" x2="21" y2="9.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <line x1="8" y1="3" x2="8" y2="6.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <line x1="16" y1="3" x2="16" y2="6.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <rect x="13" y="13" width="4" height="4" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-target',
+        name: 'Mục tiêu',
+        en: 'Target Goal',
+        category: 'team',
+        tags: 'muc tieu target goal kpi dinh huong',
+        desc: 'Tâm ngắm bát giác sắc nét thay cho vòng tròn truyền thống, dùng cho Slide Mục tiêu / KPI.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="${c.fill}" />` : ''}
+          <polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="10,7 14,7 17,10 17,14 14,17 10,17 7,14 7,10" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+          <polygon points="12,9.5 14.5,12 12,14.5 9.5,12" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-trophy',
+        name: 'Thành tích',
+        en: 'Trophy Award',
+        category: 'team',
+        tags: 'thanh tich giai thuong cup trophy award',
+        desc: 'Cúp hình học góc cạnh kèm ngôi sao chiến thắng, phù hợp cho trang Thành tựu / Cuộc thi.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="6,4 18,4 16,13 12,15.5 8,13" fill="${c.fill}" />` : ''}
+          <polygon points="6,4 18,4 16,13 12,15.5 8,13" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="6,6 3,6 3,10 7,11.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" stroke-linejoin="miter" />
+          <polyline points="18,6 21,6 21,10 17,11.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" stroke-linejoin="miter" />
+          <line x1="12" y1="15.5" x2="12" y2="20" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <line x1="8" y1="20" x2="16" y2="20" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <path d="M12 6.5 Q12 9 14.2 9 Q12 9 12 11.5 Q12 9 9.8 9 Q12 9 12 6.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-spark-idea',
+        name: 'Ý tưởng sáng tạo',
+        en: 'Idea Bulb',
+        category: 'team',
+        tags: 'y tuong sang tao idea bong den insight',
+        desc: 'Bóng đèn đa giác với lõi sáng 4 cánh, dùng cho phần Ý tưởng, Concept hoặc Giải pháp.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="8,4 16,4 19,8 19,12 15,16 9,16 5,12 5,8" fill="${c.fill}" />` : ''}
+          <polygon points="8,4 16,4 19,8 19,12 15,16 9,16 5,12 5,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="9" y1="19" x2="15" y2="19" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <line x1="10.5" y1="21.5" x2="13.5" y2="21.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <path d="M12 6.8 Q12 10 15 10 Q12 10 12 13.2 Q12 10 9 10 Q12 10 12 6.8 Z" fill="${c.accent}" />
+        `
+      },
+
+      // --- CATEGORY 3: DESIGN & CREATIVE (8) ---
+      {
+        id: 'futs-layers',
+        name: 'Các lớp thiết kế',
+        en: 'Origami Layers',
+        category: 'design',
+        tags: 'lop thiet ke layers stack cau truc',
+        desc: 'Các mặt phẳng hình thoi xếp lớp, lấy cảm hứng từ cấu trúc xếp giấy origami.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="12,3 21,8 12,13 3,8" fill="${c.fill}" />` : ''}
+          <polygon points="12,3 21,8 12,13 3,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="3,12.5 12,17.5 21,12.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="3,17 12,22 21,17" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="12,6.2 14.5,8 12,9.8 9.5,8" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-palette',
+        name: 'Bảng màu',
+        en: 'Color Swatch',
+        category: 'design',
+        tags: 'bang mau color palette swatch brand',
+        desc: 'Thẻ mẫu màu vát cạnh tượng trưng cho hệ màu 6 sắc độ của thương hiệu.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="4,4 14,4 14,20 4,20" fill="${c.fill}" />` : ''}
+          <rect x="4" y="4" width="9" height="16" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <polyline points="13,7 19,7 19,20 13,20" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="4" y1="10" x2="13" y2="10" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+          <line x1="4" y1="15" x2="13" y2="15" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+          <rect x="14.5" y="13.5" width="3" height="4.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-pen-tool',
+        name: 'Bút vector',
+        en: 'Vector Pen',
+        category: 'design',
+        tags: 'but vector pen design ve minh hoa',
+        desc: 'Ngòi bút vẽ vector sắc bén dùng cho các hạng mục thiết kế đồ họa và minh họa.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="12,3 19,13 15,17 9,17 5,13" fill="${c.fill}" />` : ''}
+          <polygon points="12,3 19,13 15,17 9,17 5,13" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <rect x="8.5" y="17" width="7" height="4" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <line x1="12" y1="3" x2="12" y2="10.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="12,9.5 14,11.5 12,13.5 10,11.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-grid',
+        name: 'Hệ lưới bố cục',
+        en: 'Layout Grid',
+        category: 'design',
+        tags: 'luoi bo cuc grid layout dashboard',
+        desc: 'Hệ lưới bất đối xứng với 1 ô vát góc điểm nhấn màu Lemon Pie, dùng cho mục Tổng quan/Layout.',
+        draw: (c) => `
+          ${c.showFill ? `<rect x="3" y="3" width="8" height="8" fill="${c.fill}" />` : ''}
+          ${c.showFill ? `<rect x="13" y="13" width="8" height="8" fill="${c.fill}" />` : ''}
+          <rect x="3" y="3" width="7.5" height="7.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <polygon points="13.5,3 19,3 21,5 21,10.5 13.5,10.5" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <rect x="3" y="13.5" width="7.5" height="7.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <rect x="13.5" y="13.5" width="7.5" height="7.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" />
+        `
+      },
+      {
+        id: 'futs-slide',
+        name: 'Trình chiếu',
+        en: 'Presentation Slide',
+        category: 'design',
+        tags: 'slide trinh chieu thuyet trinh deck pitch',
+        desc: 'Màn hình trình chiếu vát góc kèm đường biểu đồ tăng trưởng, dành cho bộ Template Slide nhóm.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="3,4 19,4 21,6 21,16 3,16" fill="${c.fill}" />` : ''}
+          <polygon points="3,4 19,4 21,6 21,16 3,16" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="12" y1="16" x2="12" y2="20.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <line x1="7.5" y1="20.5" x2="16.5" y2="20.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <polyline points="6.5,12.5 10,9.5 13,11.5 17,7.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <rect x="15.8" y="6.3" width="2.4" height="2.4" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-image',
+        name: 'Khung hình ảnh',
+        en: 'Media Frame',
+        category: 'design',
+        tags: 'hinh anh photo media banner gallery',
+        desc: 'Khung ảnh đa giác với núi origami và điểm sao, dùng cho Gallery hoặc Banner.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="3,18 9,11 13,15 16,12 21,18" fill="${c.fill}" />` : ''}
+          <polygon points="5,4 21,4 21,18 19,20 3,20 3,6" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="3.5,18 9,11.5 13,15.5 16,12.5 20.5,17.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" stroke-linejoin="miter" />
+          <path d="M16 6.5 Q16 8.5 18 8.5 Q16 8.5 16 10.5 Q16 8.5 14 8.5 Q16 8.5 16 6.5 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-folder',
+        name: 'Thư mục dự án',
+        en: 'Project Folder',
+        category: 'design',
+        tags: 'thu muc du an folder asset drive',
+        desc: 'Thư mục vát góc sắc cạnh để lưu trữ tài nguyên, file in ấn và brand assets.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="3,8 21,8 21,18 19,20 3,20" fill="${c.fill}" />` : ''}
+          <polygon points="3,5 10,5 12,8 21,8 21,18 19,20 3,20" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="15.5,11.5 18.5,11.5 18.5,14.5 15.5,14.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-document',
+        name: 'Tài liệu Brand',
+        en: 'Brand Document',
+        category: 'design',
+        tags: 'tai lieu bao cao document guidelines file',
+        desc: 'Trang tài liệu có nếp gấp origami góc trên phải, dùng cho Brand Guidelines hoặc Báo cáo.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="5,3 15,3 19,7 19,21 5,21" fill="${c.fill}" />` : ''}
+          <polygon points="5,3 15,3 19,7 19,21 5,21" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="15,3 19,7 15,7" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" stroke-linejoin="miter" />
+          <line x1="8" y1="11.5" x2="16" y2="11.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <line x1="8" y1="15.5" x2="14" y2="15.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+        `
+      },
+
+      // --- CATEGORY 4: UI & NAVIGATION (8) ---
+      {
+        id: 'futs-home',
+        name: 'Trang chủ',
+        en: 'Home',
+        category: 'ui',
+        tags: 'trang chu home main start',
+        desc: 'Biểu tượng Trang chủ mái nhọn sắc cạnh với ô cửa điểm nhấn Lemon Pie.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="12,3.5 20,10.5 20,20.5 4,20.5 4,10.5" fill="${c.fill}" />` : ''}
+          <polygon points="12,3.5 20,10.5 20,20.5 4,20.5 4,10.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <rect x="10" y="13.5" width="4" height="7" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+        `
+      },
+      {
+        id: 'futs-search',
+        name: 'Tìm kiếm',
+        en: 'Search',
+        category: 'ui',
+        tags: 'tim kiem search filter tra cuu',
+        desc: 'Kính lúp khung lục giác thay cho hình tròn thông thường để giữ chất hình học đồng nhất.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="8,3 14,3 18,7 18,13 14,17 8,17 4,13 4,7" fill="${c.fill}" />` : ''}
+          <polygon points="8,3 14,3 18,7 18,13 14,17 8,17 4,13 4,7" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="16" y1="15" x2="21" y2="20" stroke="${c.stroke}" stroke-width="${c.sw * 1.1}" stroke-linecap="square" />
+          <polygon points="11,7.5 13,9.5 11,11.5 9,9.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-arrow-launch',
+        name: 'Bứt phá',
+        en: 'Launch Arrow',
+        category: 'ui',
+        tags: 'mui ten but pha link mo ngoai cta launch',
+        desc: 'Mũi tên chéo 45° hướng lên phải (cùng hướng bay của cá origami), dùng cho nút CTA.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="6,6 19,5 18,18 14,14 8,20 4,16 10,10" fill="${c.fill}" />` : ''}
+          <polyline points="8,5 19,5 19,16" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="5" y1="19" x2="19" y2="5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <polygon points="6.5,14.5 9.5,17.5 6.5,20.5 3.5,17.5" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-download',
+        name: 'Tải xuống',
+        en: 'Download',
+        category: 'ui',
+        tags: 'tai xuong download export luu file',
+        desc: 'Biểu tượng tải tệp với khay đựng vát góc và đầu mũi tên sắc cạnh.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="4,15 20,15 20,20 4,20" fill="${c.fill}" />` : ''}
+          <line x1="12" y1="3.5" x2="12" y2="14.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+          <polyline points="7.5,10.5 12,15 16.5,10.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="4,15 4,20 20,20 20,15" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <rect x="10.5" y="16.8" width="3" height="1.6" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-share',
+        name: 'Chia sẻ',
+        en: 'Share Network',
+        category: 'ui',
+        tags: 'chia se share ket noi social mang xa hoi',
+        desc: '3 nút hình thoi kết nối nhau bằng đường chéo sắc nét, dùng cho chia sẻ bài đăng/tài liệu.',
+        draw: (c) => `
+          <line x1="7.5" y1="11" x2="16.5" y2="6.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <line x1="7.5" y1="13" x2="16.5" y2="17.5" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="6,9 9,12 6,15 3,12" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="18,3 21,6 18,9 15,6" fill="${c.showFill ? c.fill : 'none'}" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+          <polygon points="18,15 21,18 18,21 15,18" fill="${c.showFill ? c.fill : 'none'}" stroke="${c.stroke}" stroke-width="${c.sw * 0.9}" />
+        `
+      },
+      {
+        id: 'futs-link',
+        name: 'Liên kết',
+        en: 'Geometric Link',
+        category: 'ui',
+        tags: 'lien ket link url attach dinh kem',
+        desc: 'Mắt xích hình học vát cạnh 45° thay cho viên thuốc bo tròn, đồng bộ với Calvera.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="9,12 12,9 15,12 12,15" fill="${c.accent}" />` : ''}
+          <polyline points="10.5,13.5 7,17 4.5,14.5 8,11 9.5,9.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="13.5,10.5 17,7 19.5,9.5 16,13 14.5,14.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <line x1="9.5" y1="14.5" x2="14.5" y2="9.5" stroke="${c.stroke}" stroke-width="${c.sw}" />
+        `
+      },
+      {
+        id: 'futs-check-badge',
+        name: 'Xác nhận',
+        en: 'Verified Check',
+        category: 'ui',
+        tags: 'xac nhan hoan thanh check verified done',
+        desc: 'Huy hiệu bát giác xác nhận với dấu tích sắc gọn, dùng cho Checklist và trạng thái Hoàn tất.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="${c.fill}" />` : ''}
+          <polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polyline points="8,12.5 11,15.5 16.5,9.5" fill="none" stroke="${c.stroke}" stroke-width="${c.sw * 1.1}" stroke-linejoin="miter" />
+          <path d="M18.5 3.2 Q18.5 5 20.3 5 Q18.5 5 18.5 6.8 Q18.5 5 16.7 5 Q18.5 5 18.5 3.2 Z" fill="${c.accent}" />
+        `
+      },
+      {
+        id: 'futs-settings',
+        name: 'Cài đặt',
+        en: 'Geometric Gear',
+        category: 'ui',
+        tags: 'cai dat settings tuy chinh config',
+        desc: 'Bánh răng lục giác cơ khí sắc nét với tâm hình thoi màu Lemon Pie.',
+        draw: (c) => `
+          ${c.showFill ? `<polygon points="12,3.5 19.5,7.8 19.5,16.2 12,20.5 4.5,16.2 4.5,7.8" fill="${c.fill}" />` : ''}
+          <polygon points="12,3.5 19.5,7.8 19.5,16.2 12,20.5 4.5,16.2 4.5,7.8" fill="none" stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linejoin="miter" />
+          <polygon points="12,8.5 15.5,12 12,15.5 8.5,12" fill="${c.accent}" stroke="${c.stroke}" stroke-width="${c.sw * 0.85}" />
+        `
+      }
+    ];
+
+    // =========================================================
+    // 2. APPLICATION STATE
+    // =========================================================
+    const state = {
+      theme: 'dark',        // 'dark' | 'light'
+      view: 'library',      // 'library' | 'guidelines'
+      style: 'duotone',     // 'duotone' | 'outline' | 'badge'
+      category: 'all',
+      search: '',
+      size: 40,
+      stroke: 1.75,
+      selectedIconId: null,
+      showGrid: false
+    };
+
+    // =========================================================
+    // 3. SVG BUILDER ENGINE
+    // =========================================================
+    function getThemeColors(themeMode, styleMode) {
+      const isDark = themeMode === 'dark';
+      return {
+        stroke: isDark ? '#F4F5FA' : '#112358',
+        fill: isDark ? '#0192C6' : '#D4EAFF',
+        fillOpacity: isDark ? '0.32' : '1',
+        accent: '#F1FF62',
+        accentFillOp: isDark ? '0.35' : '0.65',
+        badgeBg: isDark ? '#004499' : '#D4EAFF',
+        badgeBorder: isDark ? '#0192C6' : '#112358',
+        showFill: styleMode !== 'outline',
+        sw: state.stroke
+      };
+    }
+
+    function buildIconSVG(icon, opts = {}) {
+      const themeMode = opts.theme || state.theme;
+      const styleMode = opts.style || state.style;
+      const size = opts.size || state.size;
+      const c = getThemeColors(themeMode, styleMode);
+
+      // Apply fill-opacity cleanly for dark mode duotone polygons
+      let inner = icon.draw(c);
+      if (themeMode === 'dark' && c.showFill) {
+        inner = inner.replaceAll(`fill="${c.fill}"`, `fill="${c.fill}" fill-opacity="0.34"`);
+      }
+
+      if (styleMode === 'badge') {
+        const badgeStroke = themeMode === 'dark' ? '#F4F5FA' : '#112358';
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${size}" height="${size}">
+  <polygon points="7,2 30,2 30,25 25,30 2,30 2,7" fill="${c.badgeBg}" stroke="${c.badgeBorder}" stroke-width="1.4" stroke-linejoin="miter"/>
+  <polygon points="2,7 7,2 7,7" fill="${themeMode === 'dark' ? '#0192C6' : '#004499'}" fill-opacity="0.45"/>
+  <g transform="translate(5.2, 5.2) scale(0.9)">${inner.replaceAll(c.stroke, badgeStroke)}</g>
+  <path d="M27.2 2.2 Q27.2 5.2 30.2 5.2 Q27.2 5.2 27.2 8.2 Q27.2 5.2 24.2 5.2 Q27.2 5.2 27.2 2.2 Z" fill="#F1FF62"/>
+</svg>`;
+      }
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
+  ${inner.trim()}
+</svg>`;
+    }
+
+    // =========================================================
+    // 4. RENDERING & INTERACTIONS
+    // =========================================================
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.remove('hidden-toast');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.add('hidden-toast');
+      }, 2200);
+    }
+
+    function copyText(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(() => fallbackCopy(text, successMsg));
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (e) {
+        showToast('Không thể sao chép tự động, hãy bôi đen mã SVG.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadPNG(icon) {
+      const svgStr = buildIconSVG(icon, { size: 512 });
+      const img = new Image();
+      const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 512, 512);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => {
+          const pngUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = pngUrl;
+          a.download = `${icon.id}-${state.style}-${state.theme}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(pngUrl);
+          showToast(`Đã tải ${icon.id}.png (512×512)`);
+        }, 'image/png');
+      };
+      img.src = url;
+    }
+
+    function exportAllIconsSheet() {
+      const cols = 8;
+      const cellW = 120;
+      const cellH = 124;
+      const pad = 40;
+      const rows = Math.ceil(ICONS.length / cols);
+      const totalW = cols * cellW + pad * 2;
+      const totalH = rows * cellH + pad * 2 + 64;
+      const bg = state.theme === 'dark' ? '#112358' : '#F4F5FA';
+      const titleColor = state.theme === 'dark' ? '#F4F5FA' : '#112358';
+      const subColor = state.theme === 'dark' ? '#D4EAFF' : '#004499';
+
+      let itemsXml = '';
+      ICONS.forEach((icon, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = pad + col * cellW;
+        const y = pad + 64 + row * cellH;
+        const rawSvg = buildIconSVG(icon, { size: 48 });
+        // Extract viewBox and inner content to nest cleanly as editable <g> in Figma/Illustrator
+        const vbMatch = rawSvg.match(/viewBox="([^"]+)"/);
+        const vb = vbMatch ? vbMatch[1] : '0 0 24 24';
+        const inner = rawSvg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+        const scale = vb === '0 0 32 32' ? 1.5 : 2;
+        itemsXml += `
+  <g id="${icon.id}" transform="translate(${x}, ${y})">
+    <g transform="translate(36, 16) scale(${scale})">${inner}</g>
+    <text x="60" y="92" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="600" fill="${subColor}">${icon.id}</text>
+  </g>`;
+      });
+
+      const sheet = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}">
+  <rect width="${totalW}" height="${totalH}" fill="${bg}" />
+  <text x="${pad}" y="46" font-family="sans-serif" font-size="22" font-weight="700" fill="${titleColor}">FISH UPON THE SKY — ICON SYSTEM (32 ICONS · ${state.style.toUpperCase()})</text>
+  <text x="${pad}" y="68" font-family="sans-serif" font-size="12" fill="${subColor}">Palette: #112358 · #004499 · #0192C6 · #D4EAFF · #F4F5FA · #F1FF62</text>
+  ${itemsXml}
+</svg>`;
+      downloadFile(`fish-upon-the-sky-icons-${state.style}-${state.theme}.svg`, sheet, 'image/svg+xml;charset=utf-8');
+      showToast('Đã tải trọn bộ 32 icon (.svg) — Kéo thẳng vào Figma/AI!');
+    }
+
+    function getFilteredIcons() {
+      const q = state.search.trim().toLowerCase();
+      return ICONS.filter((icon) => {
+        const matchCat = state.category === 'all' || icon.category === state.category;
+        if (!matchCat) return false;
+        if (!q) return true;
+        return (
+          icon.name.toLowerCase().includes(q) ||
+          icon.en.toLowerCase().includes(q) ||
+          icon.id.toLowerCase().includes(q) ||
+          icon.tags.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    function renderCategories() {
+      const wrap = document.getElementById('category-filters');
+      wrap.innerHTML = CATEGORIES.map((cat) => {
+        const active = state.category === cat.id;
+        return `<button type="button" data-cat="${cat.id}" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition" style="background-color: ${active ? 'var(--chip-active-bg)' : 'var(--chip-bg)'}; color: ${active ? 'var(--chip-active-text)' : 'var(--text-primary)'};">${cat.label}</button>`;
+      }).join('');
+    }
+
+    function renderStyleButtons() {
+      document.querySelectorAll('.style-btn').forEach((btn) => {
+        const active = btn.dataset.style === state.style;
+        btn.style.backgroundColor = active ? 'var(--chip-active-bg)' : 'transparent';
+        btn.style.color = active ? 'var(--chip-active-text)' : 'var(--text-primary)';
+      });
+    }
+
+    function renderNavTabs() {
+      const isLib = state.view === 'library';
+      document.getElementById('view-library').classList.toggle('hidden', !isLib);
+      document.getElementById('view-guidelines').classList.toggle('hidden', isLib);
+
+      [
+        ['nav-library', isLib],
+        ['nav-guidelines', !isLib],
+        ['nav-library-mobile', isLib],
+        ['nav-guidelines-mobile', !isLib]
+      ].forEach(([id, active]) => {
+        const el = document.getElementById(id);
+        el.style.backgroundColor = active ? 'var(--chip-active-bg)' : 'transparent';
+        el.style.color = active ? 'var(--chip-active-text)' : 'var(--text-primary)';
+      });
+    }
+
+    function renderIconsGrid() {
+      const list = getFilteredIcons();
+      const grid = document.getElementById('icons-grid');
+      const empty = document.getElementById('empty-state');
+      document.getElementById('result-count').textContent = `Đang hiển thị ${list.length} / ${ICONS.length} icons`;
+
+      if (list.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      grid.innerHTML = list.map((icon) => {
+        const svg = buildIconSVG(icon);
+        return `
+          <div class="icon-card card-surface rounded-xl p-3.5 flex flex-col items-center justify-between gap-2.5 group relative cursor-pointer" data-icon-id="${icon.id}">
+            <div class="w-full flex items-center justify-between">
+              <span class="text-[10px] font-mono opacity-60 truncate">${icon.id.replace('futs-', '')}</span>
+              <button type="button" class="quick-copy-btn opacity-90 sm:opacity-0 sm:group-hover:opacity-100 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#F1FF62] text-[#112358] transition cursor-pointer" data-copy-id="${icon.id}" title="Copy nhanh mã SVG">Copy</button>
+            </div>
+            <div class="h-16 flex items-center justify-center my-1">
+              ${svg}
+            </div>
+            <div class="text-center w-full">
+              <div class="text-xs font-semibold truncate" style="color: var(--text-primary);">${icon.name}</div>
+              <div class="text-[10px] truncate" style="color: var(--text-muted);">${icon.en}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPalette() {
+      const wrap = document.getElementById('palette-grid');
+      wrap.innerHTML = PALETTE.map((p) => `
+        <button type="button" class="palette-swatch rounded-xl overflow-hidden border text-left transition hover:-translate-y-0.5 cursor-pointer" data-hex="${p.hex}" style="border-color: var(--surface-border); background-color: var(--surface-bg);">
+          <div class="h-16 p-2.5 flex items-end justify-between" style="background-color: ${p.hex}; color: ${p.textDark ? '#112358' : '#F4F5FA'};">
+            <span class="font-mono text-xs font-bold">${p.hex}</span>
+            <span class="text-[10px] opacity-80">${p.contrast}</span>
+          </div>
+          <div class="p-2.5">
+            <div class="text-xs font-bold truncate" style="color: var(--text-primary);">${p.name}</div>
+            <div class="text-[10px] truncate mt-0.5" style="color: var(--text-muted);">${p.role}</div>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function openInspector(iconId) {
+      const icon = ICONS.find((x) => x.id === iconId);
+      if (!icon) return;
+      state.selectedIconId = iconId;
+      updateInspectorModal();
+      const modal = document.getElementById('inspector-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function updateInspectorModal() {
+      const icon = ICONS.find((x) => x.id === state.selectedIconId);
+      if (!icon) return;
+      const catObj = CATEGORIES.find((c) => c.id === icon.category);
+      document.getElementById('modal-title').textContent = `${icon.name} · ${icon.en}`;
+      document.getElementById('modal-category').textContent = catObj ? catObj.label.replace(/\s*\(\d+\)/, '') : icon.category;
+      document.getElementById('modal-id').textContent = `${icon.id}.svg`;
+      document.getElementById('modal-desc').textContent = icon.desc;
+
+      const previewBox = document.getElementById('modal-preview-box');
+      previewBox.classList.toggle('icon-grid-bg', state.showGrid);
+      previewBox.style.border = state.showGrid ? '1px dashed rgba(1,146,198,0.5)' : 'none';
+      previewBox.innerHTML = buildIconSVG(icon, { size: 96 });
+      document.getElementById('btn-toggle-grid').textContent = `Lưới 24×24: ${state.showGrid ? 'Bật' : 'Tắt'}`;
+
+      document.getElementById('modal-preview-dark').innerHTML = buildIconSVG(icon, { theme: 'dark', size: 34 });
+      document.getElementById('modal-preview-light').innerHTML = buildIconSVG(icon, { theme: 'light', size: 34 });
+      document.getElementById('modal-preview-grad').innerHTML = buildIconSVG(icon, { theme: 'dark', size: 34 });
+
+      const exportSvg = buildIconSVG(icon, { size: state.size });
+      document.getElementById('modal-svg-code').textContent = exportSvg;
+      document.getElementById('modal-meta-badge').textContent = `${state.size}px · stroke ${state.stroke}px · ${state.style}`;
+    }
+
+    function closeInspector() {
+      const modal = document.getElementById('inspector-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      state.selectedIconId = null;
+    }
+
+    function applyTheme() {
+      const isDark = state.theme === 'dark';
+      document.body.classList.toggle('theme-dark', isDark);
+      document.body.classList.toggle('theme-light', !isDark);
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('theme-label').textContent = isDark ? 'Light' : 'Dark';
+      renderCategories();
+      renderStyleButtons();
+      renderNavTabs();
+      renderIconsGrid();
+      if (state.selectedIconId) updateInspectorModal();
+    }
+
+    // =========================================================
+    // 5. EVENT LISTENERS
+    // =========================================================
+    document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+    });
+
+    document.getElementById('btn-export-sheet').addEventListener('click', exportAllIconsSheet);
+
+    ['nav-library', 'nav-library-mobile', 'btn-back-to-icons'].forEach((id) => {
+      document.getElementById(id).addEventListener('click', () => {
+        state.view = 'library';
+        renderNavTabs();
+      });
+    });
+
+    ['nav-guidelines', 'nav-guidelines-mobile'].forEach((id) => {
+      document.getElementById(id).addEventListener('click', () => {
+        state.view = 'guidelines';
+        renderNavTabs();
+      });
+    });
+
+    document.getElementById('category-filters').addEventListener('click', (e) => {
+      const btn = e.target.closest('.cat-btn');
+      if (!btn) return;
+      state.category = btn.dataset.cat;
+      renderCategories();
+      renderIconsGrid();
+    });
+
+    document.querySelectorAll('.style-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.style = btn.dataset.style;
+        renderStyleButtons();
+        renderIconsGrid();
+        if (state.selectedIconId) updateInspectorModal();
+      });
+    });
+
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('btn-clear-search');
+    searchInput.addEventListener('input', (e) => {
+      state.search = e.target.value;
+      clearBtn.classList.toggle('hidden', !state.search);
+      renderIconsGrid();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      state.search = '';
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      renderIconsGrid();
+    });
+
+    document.getElementById('btn-reset-filters').addEventListener('click', () => {
+      state.search = '';
+      state.category = 'all';
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      renderCategories();
+      renderIconsGrid();
+    });
+
+    document.getElementById('size-slider').addEventListener('input', (e) => {
+      state.size = Number(e.target.value);
+      document.getElementById('size-value').textContent = `${state.size}px`;
+      renderIconsGrid();
+      if (state.selectedIconId) updateInspectorModal();
+    });
+
+    document.getElementById('stroke-slider').addEventListener('input', (e) => {
+      state.stroke = Number(e.target.value);
+      document.getElementById('stroke-value').textContent = `${state.stroke}px`;
+      renderIconsGrid();
+      if (state.selectedIconId) updateInspectorModal();
+    });
+
+    // Delegate icon card click & quick copy
+    document.getElementById('icons-grid').addEventListener('click', (e) => {
+      const copyBtn = e.target.closest('.quick-copy-btn');
+      if (copyBtn) {
+        e.stopPropagation();
+        const icon = ICONS.find((x) => x.id === copyBtn.dataset.copyId);
+        if (icon) {
+          copyText(buildIconSVG(icon), `Đã copy SVG "${icon.name}" — Dán ngay vào Figma!`);
+        }
+        return;
+      }
+      const card = e.target.closest('.icon-card');
+      if (card) {
+        openInspector(card.dataset.iconId);
+      }
+    });
+
+    // Palette swatch copy
+    document.getElementById('palette-grid').addEventListener('click', (e) => {
+      const swatch = e.target.closest('.palette-swatch');
+      if (!swatch) return;
+      copyText(swatch.dataset.hex, `Đã sao chép mã màu ${swatch.dataset.hex}`);
+    });
+
+    // Modal controls
+    document.getElementById('btn-close-modal').addEventListener('click', closeInspector);
+    document.getElementById('inspector-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'inspector-modal') closeInspector();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.selectedIconId) closeInspector();
+    });
+
+    document.getElementById('btn-toggle-grid').addEventListener('click', () => {
+      state.showGrid = !state.showGrid;
+      updateInspectorModal();
+    });
+
+    document.getElementById('modal-copy-svg').addEventListener('click', () => {
+      const icon = ICONS.find((x) => x.id === state.selectedIconId);
+      if (icon) copyText(buildIconSVG(icon), `Đã copy SVG "${icon.name}"!`);
+    });
+
+    document.getElementById('modal-download-svg').addEventListener('click', () => {
+      const icon = ICONS.find((x) => x.id === state.selectedIconId);
+      if (icon) {
+        downloadFile(`${icon.id}-${state.style}-${state.theme}.svg`, buildIconSVG(icon), 'image/svg+xml;charset=utf-8');
+        showToast(`Đã tải ${icon.id}.svg`);
+      }
+    });
+
+    document.getElementById('modal-download-png').addEventListener('click', () => {
+      const icon = ICONS.find((x) => x.id === state.selectedIconId);
+      if (icon) downloadPNG(icon);
+    });
+
+    // Initial Boot
+    renderPalette();
+    applyTheme();
+  </script>
+</body>
+</html>

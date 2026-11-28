@@ -61,11 +61,40 @@ create table if not exists public.busy_days (
   primary key (member_id, day)
 );
 
+create table if not exists public.ripples (
+  id text primary key,
+  member_id text not null check (member_id in ('bao', 'hang', 'diem', 'quynh', 'quoc-anh', 'thu', 'thien')),
+  image_url text not null,
+  caption text not null default '',
+  place text not null default '',
+  trip_id text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.ripple_reactions (
+  ripple_id text not null references public.ripples(id) on delete cascade,
+  member_id text not null check (member_id in ('bao', 'hang', 'diem', 'quynh', 'quoc-anh', 'thu', 'thien')),
+  emoji text not null,
+  created_at timestamptz not null default now(),
+  primary key (ripple_id, member_id, emoji)
+);
+
+create table if not exists public.ripple_notes (
+  id text primary key,
+  ripple_id text not null references public.ripples(id) on delete cascade,
+  member_id text not null check (member_id in ('bao', 'hang', 'diem', 'quynh', 'quoc-anh', 'thu', 'thien')),
+  text text not null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.member_profiles enable row level security;
 alter table public.polls enable row level security;
 alter table public.poll_votes enable row level security;
 alter table public.outings enable row level security;
 alter table public.busy_days enable row level security;
+alter table public.ripples enable row level security;
+alter table public.ripple_reactions enable row level security;
+alter table public.ripple_notes enable row level security;
 
 -- SELECT policies: chỉ thành viên đã liên kết được đọc
 drop policy if exists "members_select_profiles" on public.member_profiles;
@@ -159,12 +188,64 @@ create policy "owner_delete_busy_days" on public.busy_days
   for delete to authenticated
   using (member_id = public.current_member_id());
 
+-- ripples, ripple_reactions, ripple_notes
+drop policy if exists "members_select_ripples" on public.ripples;
+create policy "members_select_ripples" on public.ripples
+  for select to authenticated
+  using (public.current_member_id() is not null);
+
+drop policy if exists "owner_insert_ripples" on public.ripples;
+create policy "owner_insert_ripples" on public.ripples
+  for insert to authenticated
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_update_ripples" on public.ripples;
+create policy "owner_update_ripples" on public.ripples
+  for update to authenticated
+  using (member_id = public.current_member_id())
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_delete_ripples" on public.ripples;
+create policy "owner_delete_ripples" on public.ripples
+  for delete to authenticated
+  using (member_id = public.current_member_id());
+
+drop policy if exists "members_select_ripple_reactions" on public.ripple_reactions;
+create policy "members_select_ripple_reactions" on public.ripple_reactions
+  for select to authenticated
+  using (public.current_member_id() is not null);
+
+drop policy if exists "owner_insert_ripple_reactions" on public.ripple_reactions;
+create policy "owner_insert_ripple_reactions" on public.ripple_reactions
+  for insert to authenticated
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_delete_ripple_reactions" on public.ripple_reactions;
+create policy "owner_delete_ripple_reactions" on public.ripple_reactions
+  for delete to authenticated
+  using (member_id = public.current_member_id());
+
+drop policy if exists "members_select_ripple_notes" on public.ripple_notes;
+create policy "members_select_ripple_notes" on public.ripple_notes
+  for select to authenticated
+  using (public.current_member_id() is not null);
+
+drop policy if exists "owner_insert_ripple_notes" on public.ripple_notes;
+create policy "owner_insert_ripple_notes" on public.ripple_notes
+  for insert to authenticated
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_delete_ripple_notes" on public.ripple_notes;
+create policy "owner_delete_ripple_notes" on public.ripple_notes
+  for delete to authenticated
+  using (member_id = public.current_member_id());
+
 -- Realtime publication (idempotent)
 do $$
 declare
   tbl text;
 begin
-  foreach tbl in array array['member_profiles', 'polls', 'poll_votes', 'outings', 'busy_days']
+  foreach tbl in array array['member_profiles', 'polls', 'poll_votes', 'outings', 'busy_days', 'ripples', 'ripple_reactions', 'ripple_notes']
   loop
     if not exists (
       select 1 from pg_publication_tables

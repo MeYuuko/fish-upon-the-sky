@@ -1,17 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import GlassFolder from './GlassFolder.jsx';
+import BrandIcon from './BrandIcon.jsx';
+
+const BRAND_VAULT_ICONS = new Set([
+  'folder',
+  'image',
+  'link',
+  'pin',
+  'sheet',
+  'sparkles',
+  'check',
+  'arrowUpRight',
+  'external',
+]);
 
 function VaultIcon({ name, size = 16 }) {
+  if (BRAND_VAULT_ICONS.has(name)) {
+    return <BrandIcon name={name} size={size} strokeWidth={1.85} />;
+  }
   const common = {
     width: size,
     height: size,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 1.9,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
+    strokeWidth: 1.85,
+    strokeLinecap: 'square',
+    strokeLinejoin: 'miter',
     'aria-hidden': 'true',
   };
   const paths = {

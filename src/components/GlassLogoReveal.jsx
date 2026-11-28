@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import logo from '../../Logo/Logo.svg';
+import logoLight from '../../Logo/Logo.svg';
+import logoDark from '../../Logo/Logo white verse.svg';
 
 const LIGHT = {
   tileSize: 256,
@@ -1067,7 +1068,7 @@ export default function WelcomeReveal({ memberName, theme = 'dark', onDone }) {
         >
           <GlassIconReveal
             className="reveal-canvas"
-            logo={logo}
+            logo={isDark ? logoDark : logoLight}
             look={isDark ? 'dark' : 'light'}
             background={isDark ? '#112358' : '#F4F5FA'}
             plateColor={isDark ? '#112358' : '#F4F5FA'}

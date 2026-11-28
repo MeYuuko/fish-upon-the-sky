@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import BrandIcon from './BrandIcon.jsx';
 
 /**
  * Beam Wordmark Footer — adapted from 21st.dev BeamWordmarkFooter to
@@ -40,25 +41,12 @@ export const wordHeight = (fontSize, baseline, cut) =>
   Math.max(0, fontSize * (baseline + clamp(Number.isFinite(cut) ? cut : 0, -0.4, 0.4)));
 
 const QUICK_ICONS = {
-  home: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m4 10.5 8-6.5 8 6.5" />
-      <path d="M6 9.5v9.5h12V9.5M9.5 19v-5.5h5V19" />
-    </g>
-  ),
-  outings: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" />
-      <path d="m18.5 15 .6 1.9L21 17.5l-1.9.6-.6 1.9-.6-1.9L16 17.5l1.9-.6.6-1.9Z" />
-    </g>
-  ),
-  vault: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3.5 7A2 2 0 0 1 5.5 5h3.8l1.8 2.2h7.4a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7Z" />
-    </g>
-  ),
+  home: <BrandIcon name="home" size={20} strokeWidth={1.7} />,
+  outings: <BrandIcon name="spark" size={20} strokeWidth={1.7} />,
+  ripples: <BrandIcon name="ripple" size={20} strokeWidth={1.7} />,
+  vault: <BrandIcon name="folder" size={20} strokeWidth={1.7} />,
   'new-poll': (
-    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter">
       <path d="M12 5v14M5 12h14" />
     </g>
   ),
@@ -92,6 +80,7 @@ const Arrow = () => (
 const DEFAULT_SOCIALS = [
   { label: 'My tasks', action: 'home', icon: 'home' },
   { label: 'Outings', action: 'outings', icon: 'outings' },
+  { label: 'Ripples', action: 'ripples', icon: 'ripples' },
   { label: 'Trip Vault', action: 'vault', icon: 'vault' },
   { label: 'Start a new plan', action: 'new-poll', icon: 'new-poll' },
 ];
@@ -108,6 +97,7 @@ const DEFAULT_COLUMNS = [
       { label: 'My tasks', tab: 'home' },
       { label: 'Calendar', tab: 'calendar' },
       { label: 'Outings', tab: 'outings' },
+      { label: 'Ripples', tab: 'ripples' },
       { label: 'Vault', tab: 'vault' },
       { label: 'Fishes', tab: 'members' },
     ],
@@ -378,9 +368,19 @@ export default function BeamWordmarkFooter({
                       aria-label={s.label}
                       onClick={() => handleAction(s)}
                     >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        {typeof s.icon === 'string' && QUICK_ICONS[s.icon] ? QUICK_ICONS[s.icon] : s.icon}
-                      </svg>
+                      {typeof s.icon === 'string' && QUICK_ICONS[s.icon] ? (
+                        s.icon === 'new-poll' ? (
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            {QUICK_ICONS[s.icon]}
+                          </svg>
+                        ) : (
+                          QUICK_ICONS[s.icon]
+                        )
+                      ) : (
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          {s.icon}
+                        </svg>
+                      )}
                       <span className="bwf-tip" aria-hidden="true">
                         {s.label}
                       </span>

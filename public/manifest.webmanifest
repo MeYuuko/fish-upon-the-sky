@@ -1,0 +1,17 @@
+{
+  "name": "Fish Upon The Sky",
+  "short_name": "Fish Sky",
+  "description": "A little plan, a lot of sky. Shared planner, ripples, and trip vault for Fish Upon The Sky.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#112358",
+  "theme_color": "#112358",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -26,7 +26,10 @@ import TripVaultView from './components/TripVaultView.jsx';
 import BeamWordmarkFooter from './components/BeamWordmarkFooter.jsx';
 import LiquidGlassTabBar from './components/LiquidGlassTabBar.jsx';
 import FishesView from './components/FishesView.jsx';
-import logo from '../Logo/Logo.svg';
+import RipplesView, { DropRippleModal, LatestRippleWidget } from './components/RipplesView.jsx';
+import BrandIcon from './components/BrandIcon.jsx';
+import logoLight from '../Logo/Logo.svg';
+import logoDark from '../Logo/Logo white verse.svg';
 
 const people = [
   { id: 'bao', name: 'Bảo', color: 'blue' },
@@ -42,12 +45,29 @@ const navItems = [
   { id: 'home', label: 'My tasks', icon: 'home' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'outings', label: 'Outings', icon: 'spark' },
+  { id: 'ripples', label: 'Ripples', icon: 'ripple' },
   { id: 'vault', label: 'Vault', icon: 'folder' },
   { id: 'members', label: 'Fishes', icon: 'people' },
 ];
 
+const BRAND_APP_ICONS = new Set([
+  'home',
+  'calendar',
+  'spark',
+  'ripple',
+  'folder',
+  'people',
+  'link',
+  'check',
+  'pin',
+  'heart',
+]);
+
 function Icon({ name, size = 20, strokeWidth = 1.8 }) {
-  const common = { fill: 'none', stroke: 'currentColor', strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (BRAND_APP_ICONS.has(name)) {
+    return <BrandIcon name={name} size={size} strokeWidth={strokeWidth} />;
+  }
+  const common = { fill: 'none', stroke: 'currentColor', strokeWidth, strokeLinecap: 'square', strokeLinejoin: 'miter' };
   const paths = {
     home: <><path d="m3.5 10 8.5-7 8.5 7" /><path d="M5.5 9v10h13V9M9 19v-6h6v6" /></>,
     calendar: <><rect x="3.5" y="5" width="17" height="16" rx="3" /><path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" /><path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
@@ -201,8 +221,21 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
   </motion.div>;
 }
 
-function HomeView({ polls, outings, members, onNewPoll, onVote, currentMemberId, currentMemberName, goTo }) {
+function HomeView({
+  polls,
+  outings,
+  members,
+  ripples,
+  onNewPoll,
+  onVote,
+  onToggleRippleReaction,
+  onDropRipple,
+  currentMemberId,
+  currentMemberName,
+  goTo,
+}) {
   const openPoll = polls.find((poll) => poll.status === 'Voting');
+  const latestRipple = ripples?.[0] ?? null;
 
   return (
     <div className="home-stack">
@@ -213,6 +246,16 @@ function HomeView({ polls, outings, members, onNewPoll, onVote, currentMemberId,
         members={members}
         onNewPoll={onNewPoll}
         onNavigate={goTo}
+      />
+
+      <LatestRippleWidget
+        latestRipple={latestRipple}
+        totalCount={ripples?.length ?? 0}
+        members={members}
+        currentMemberId={currentMemberId}
+        onToggleReaction={onToggleRippleReaction}
+        onOpenRipples={() => goTo('ripples')}
+        onDropRipple={onDropRipple}
       />
 
       {openPoll && (
@@ -582,6 +625,7 @@ export function PlannerApp({
     }
   }, [theme]);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showRippleModal, setShowRippleModal] = useState(false);
   const didMountTabRef = useRef(false);
 
   const {
@@ -589,6 +633,7 @@ export function PlannerApp({
     polls,
     outings,
     busyDays,
+    ripples,
     loading,
     syncError,
     dismissError,
@@ -600,6 +645,12 @@ export function PlannerApp({
     changeOutingStatus,
     toggleBusy,
     addBusyDays,
+    createRipple,
+    deleteRipple,
+    toggleRippleReaction,
+    addRippleNote,
+    deleteRippleNote,
+    saveRippleToVault,
   } = useGroupData(client, currentMemberId, people);
 
   const scrollToTop = () => {
@@ -622,10 +673,15 @@ export function PlannerApp({
   const displayName = currentMember.nickname || currentMember.name;
   const hasOpenPoll = polls.some((poll) => poll.status === 'Voting');
   const pendingTaskCount = (hasOpenPoll ? 1 : 0) + (outings.some((o) => o.status === 'Done' && !o.sheetUrl) ? 1 : 0) + 1;
+  const hasRecentRipple = ripples.some((r) => {
+    const ts = new Date(r.createdAt).getTime();
+    return Number.isFinite(ts) && Date.now() - ts < 1000 * 60 * 60 * 24;
+  });
 
   const navTabs = navItems.map((item) => {
     if (item.id === 'home') return { ...item, count: pendingTaskCount };
     if (item.id === 'outings') return { ...item, count: outings.length, notice: hasOpenPoll };
+    if (item.id === 'ripples') return { ...item, count: ripples.length, notice: hasRecentRipple };
     if (item.id === 'vault') return { ...item, count: outings.length };
     if (item.id === 'members') return { ...item, count: members.length };
     return item;
@@ -653,7 +709,7 @@ export function PlannerApp({
       <div className="studio-header-inner">
         <div className="header-left">
           <button type="button" className="brand-lockup" onClick={() => navigateToTab('home')} aria-label="Fish Upon The Sky home">
-            <img className="brand-fish" src={logo} alt="" />
+            <img className="brand-fish" src={theme === 'dark' ? logoDark : logoLight} alt="" />
             <strong>Fish Upon The Sky</strong>
           </button>
         </div>
@@ -740,8 +796,11 @@ export function PlannerApp({
                 polls={polls}
                 outings={outings}
                 members={members}
+                ripples={ripples}
                 onNewPoll={() => setShowPollModal(true)}
                 onVote={toggleVote}
+                onToggleRippleReaction={toggleRippleReaction}
+                onDropRipple={() => setShowRippleModal(true)}
                 currentMemberId={currentMemberId}
                 currentMemberName={displayName}
                 goTo={navigateToTab}
@@ -771,6 +830,22 @@ export function PlannerApp({
                 onVote={toggleVote}
                 goTo={navigateToTab}
                 onStatusChange={changeOutingStatus}
+              />
+            )}
+            {activeTab === 'ripples' && (
+              <RipplesView
+                ripples={ripples}
+                members={members}
+                outings={outings}
+                currentMemberId={currentMemberId}
+                onOpenComposer={() => setShowRippleModal(true)}
+                onCreateRipple={createRipple}
+                onDeleteRipple={deleteRipple}
+                onToggleReaction={toggleRippleReaction}
+                onAddNote={addRippleNote}
+                onDeleteNote={deleteRippleNote}
+                onSaveToVault={saveRippleToVault}
+                onOpenVault={() => navigateToTab('vault')}
               />
             )}
             {activeTab === 'vault' && (
@@ -812,6 +887,16 @@ export function PlannerApp({
       />
     </nav>
     <AnimatePresence>{showPollModal && <NewPollModal onClose={() => setShowPollModal(false)} onCreate={handleCreatePoll} reduceMotion={reduceMotion} />}</AnimatePresence>
+    <AnimatePresence>
+      {showRippleModal && (
+        <DropRippleModal
+          outings={outings}
+          onClose={() => setShowRippleModal(false)}
+          onSubmit={createRipple}
+          reduceMotion={reduceMotion}
+        />
+      )}
+    </AnimatePresence>
   </div>;
 }
 
