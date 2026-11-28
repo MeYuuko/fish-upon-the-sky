@@ -1,17 +1,69 @@
 {
-  "name": "Fish Upon The Sky",
-  "short_name": "Fish Sky",
+  "name": "FISH",
+  "short_name": "FISH",
   "description": "A little plan, a lot of sky. Shared planner, ripples, and trip vault for Fish Upon The Sky.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#112358",
   "theme_color": "#112358",
   "icons": [
     {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ripples",
+      "short_name": "Ripples",
+      "description": "Drop a live photo onto the pond",
+      "url": "/?tab=ripples",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Calendar",
+      "short_name": "Calendar",
+      "description": "Check 7-member availability",
+      "url": "/?tab=calendar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Outings",
+      "short_name": "Outings",
+      "description": "Vote on upcoming outings",
+      "url": "/?tab=outings",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Vault",
+      "short_name": "Vault",
+      "description": "Open Trip Vault",
+      "url": "/?tab=vault",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

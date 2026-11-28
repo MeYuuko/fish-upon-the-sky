@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import DuotoneTeamRoster from './DuotoneTeamRoster.jsx';
-import FishProfileView from './FishProfileView.jsx';
-import groupPhoto from '../../Picture/Ảnh nhóm.jpg';
+import groupPhoto from '../assets/photos/group.jpg';
+
+const FishProfileView = lazy(() => import('./FishProfileView.jsx'));
 
 export default function FishesView({
   members = [],
@@ -65,15 +66,17 @@ export default function FishesView({
     <section className="page-section fishes-page">
       <AnimatePresence mode="wait" initial={false}>
         {selectedMember ? (
-          <FishProfileView
-            key={`profile-${selectedMember.id}`}
-            member={selectedMember}
-            members={members}
-            currentMemberId={currentMemberId}
-            onSelectMember={openMemberProfile}
-            onBack={closeMemberProfile}
-            onUpdateMember={onUpdateMember}
-          />
+          <Suspense fallback={<div className="lazy-fallback" role="status">Opening profile…</div>}>
+            <FishProfileView
+              key={`profile-${selectedMember.id}`}
+              member={selectedMember}
+              members={members}
+              currentMemberId={currentMemberId}
+              onSelectMember={openMemberProfile}
+              onBack={closeMemberProfile}
+              onUpdateMember={onUpdateMember}
+            />
+          </Suspense>
         ) : (
           <motion.div
             key="fishes-roster"

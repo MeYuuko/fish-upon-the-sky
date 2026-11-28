@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildMemberProfiles, DEFAULT_FISH_PHOTOS, serializeMemberProfile } from './fishProfiles.js';
-import groupPhoto from '../../Picture/Ảnh nhóm.jpg';
+import groupPhoto from '../assets/photos/group.jpg';
 import {
   addBusyDays as apiAddBusyDays,
   addRippleNote as apiAddRippleNote,

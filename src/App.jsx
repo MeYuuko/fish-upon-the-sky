@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ClerkAuthRoot, { SessionExitButton } from './auth/ClerkAuthRoot.jsx';
 import { AuthLayout } from './auth/AuthEntry.jsx';
@@ -22,15 +22,20 @@ import { todayKey } from './data/groupApi.js';
 import { useGroupData } from './data/useGroupData.js';
 import WelcomeReveal from './components/GlassLogoReveal.jsx';
 import MyTasksHero from './components/MyTasksHero.jsx';
-import TripVaultView from './components/TripVaultView.jsx';
 import BeamWordmarkFooter from './components/BeamWordmarkFooter.jsx';
 import LiquidGlassTabBar from './components/LiquidGlassTabBar.jsx';
-import FishesView from './components/FishesView.jsx';
-import RipplesView, { DropRippleModal, LatestRippleWidget } from './components/RipplesView.jsx';
-import SkyReplayModal from './components/SkyReplayModal.jsx';
+import LatestRippleWidget from './components/LatestRippleWidget.jsx';
 import BrandIcon from './components/BrandIcon.jsx';
 import logoLight from '../Logo/Logo.svg';
 import logoDark from '../Logo/Logo white verse.svg';
+
+const TripVaultView = lazy(() => import('./components/TripVaultView.jsx'));
+const FishesView = lazy(() => import('./components/FishesView.jsx'));
+const RipplesView = lazy(() => import('./components/RipplesView.jsx'));
+const DropRippleModal = lazy(() =>
+  import('./components/RipplesView.jsx').then((m) => ({ default: m.DropRippleModal })),
+);
+const SkyReplayModal = lazy(() => import('./components/SkyReplayModal.jsx'));
 
 const people = [
   { id: 'bao', name: 'Bảo', color: 'blue' },
@@ -794,13 +799,27 @@ export function PlannerApp({
       return 'dark';
     }
   });
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const requested = new URLSearchParams(window.location.search).get('tab');
+      if (requested && navItems.some((item) => item.id === requested)) {
+        return requested;
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+    return 'home';
+  });
 
   useEffect(() => {
     try {
       localStorage.setItem('fish-theme', theme);
     } catch {
       // Ignore storage errors in restricted contexts
+    }
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'dark' ? '#112358' : '#F4F5FA');
     }
   }, [theme]);
   const [showPollModal, setShowPollModal] = useState(false);
@@ -1025,41 +1044,47 @@ export function PlannerApp({
               />
             )}
             {activeTab === 'ripples' && (
-              <RipplesView
-                ripples={ripples}
-                members={members}
-                outings={outings}
-                currentMemberId={currentMemberId}
-                onOpenComposer={() => setShowRippleModal(true)}
-                onCreateRipple={createRipple}
-                onDeleteRipple={deleteRipple}
-                onToggleReaction={toggleRippleReaction}
-                onAddNote={addRippleNote}
-                onDeleteNote={deleteRippleNote}
-                onSaveToVault={saveRippleToVault}
-                onOpenVault={() => navigateToTab('vault')}
-              />
+              <Suspense fallback={<div className="lazy-fallback" role="status">Opening Ripples…</div>}>
+                <RipplesView
+                  ripples={ripples}
+                  members={members}
+                  outings={outings}
+                  currentMemberId={currentMemberId}
+                  onOpenComposer={() => setShowRippleModal(true)}
+                  onCreateRipple={createRipple}
+                  onDeleteRipple={deleteRipple}
+                  onToggleReaction={toggleRippleReaction}
+                  onAddNote={addRippleNote}
+                  onDeleteNote={deleteRippleNote}
+                  onSaveToVault={saveRippleToVault}
+                  onOpenVault={() => navigateToTab('vault')}
+                />
+              </Suspense>
             )}
             {activeTab === 'vault' && (
-              <TripVaultView
-                trips={outings}
-                theme={theme}
-                currentMemberName={displayName}
-                onUpdateTrip={updateTrip}
-                onAddPastTrip={addPastTrip}
-                onOpenReplay={() => setShowReplayModal(true)}
-              />
+              <Suspense fallback={<div className="lazy-fallback" role="status">Opening Trip Vault…</div>}>
+                <TripVaultView
+                  trips={outings}
+                  theme={theme}
+                  currentMemberName={displayName}
+                  onUpdateTrip={updateTrip}
+                  onAddPastTrip={addPastTrip}
+                  onOpenReplay={() => setShowReplayModal(true)}
+                />
+              </Suspense>
             )}
             {activeTab === 'members' && (
-              <FishesView
-                members={members}
-                outings={outings}
-                currentMemberId={currentMemberId}
-                onUpdateMember={updateMemberProfile}
-                onNewPoll={() => openPollWithDates([])}
-                onNavigate={navigateToTab}
-                onOpenReplay={() => setShowReplayModal(true)}
-              />
+              <Suspense fallback={<div className="lazy-fallback" role="status">Opening Fishes…</div>}>
+                <FishesView
+                  members={members}
+                  outings={outings}
+                  currentMemberId={currentMemberId}
+                  onUpdateMember={updateMemberProfile}
+                  onNewPoll={() => openPollWithDates([])}
+                  onNavigate={navigateToTab}
+                  onOpenReplay={() => setShowReplayModal(true)}
+                />
+              </Suspense>
             )}
           </motion.div>
         </AnimatePresence>
@@ -1095,25 +1120,29 @@ export function PlannerApp({
     </AnimatePresence>
     <AnimatePresence>
       {showReplayModal && (
-        <SkyReplayModal
-          ripples={ripples}
-          outings={outings}
-          polls={polls}
-          members={members}
-          onClose={() => setShowReplayModal(false)}
-          onNavigate={navigateToTab}
-          reduceMotion={reduceMotion}
-        />
+        <Suspense fallback={null}>
+          <SkyReplayModal
+            ripples={ripples}
+            outings={outings}
+            polls={polls}
+            members={members}
+            onClose={() => setShowReplayModal(false)}
+            onNavigate={navigateToTab}
+            reduceMotion={reduceMotion}
+          />
+        </Suspense>
       )}
     </AnimatePresence>
     <AnimatePresence>
       {showRippleModal && (
-        <DropRippleModal
-          outings={outings}
-          onClose={() => setShowRippleModal(false)}
-          onSubmit={createRipple}
-          reduceMotion={reduceMotion}
-        />
+        <Suspense fallback={null}>
+          <DropRippleModal
+            outings={outings}
+            onClose={() => setShowRippleModal(false)}
+            onSubmit={createRipple}
+            reduceMotion={reduceMotion}
+          />
+        </Suspense>
       )}
     </AnimatePresence>
   </div>;

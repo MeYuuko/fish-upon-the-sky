@@ -1,18 +1,18 @@
-import baoPhoto from '../../Picture/Cá nhân/Bảo.jpg';
-import hangPhoto from '../../Picture/Cá nhân/Hằng.jpg';
-import diemPhoto from '../../Picture/Cá nhân/Diễm.jpg';
-import quynhPhoto from '../../Picture/Cá nhân/Quỳnh.jpg';
-import quocAnhPhoto from '../../Picture/Cá nhân/Quốc Anh.jpg';
-import thuPhoto from '../../Picture/Cá nhân/Thư.jpg';
-import thienPhoto from '../../Picture/Cá nhân/Thiên.jpg';
+import baoPhoto from '../assets/photos/bao.jpg';
+import hangPhoto from '../assets/photos/hang.jpg';
+import diemPhoto from '../assets/photos/diem.jpg';
+import quynhPhoto from '../assets/photos/quynh.jpg';
+import quocAnhPhoto from '../assets/photos/quoc-anh.jpg';
+import thuPhoto from '../assets/photos/thu.jpg';
+import thienPhoto from '../assets/photos/thien.jpg';
 
-import baoCutout from '../assets/cutouts/bao.png';
-import hangCutout from '../assets/cutouts/hang.png';
-import diemCutout from '../assets/cutouts/diem.png';
-import quynhCutout from '../assets/cutouts/quynh.png';
-import quocAnhCutout from '../assets/cutouts/quoc-anh.png';
-import thuCutout from '../assets/cutouts/thu.png';
-import thienCutout from '../assets/cutouts/thien.png';
+import baoCutout from '../assets/cutouts-opt/bao.png';
+import hangCutout from '../assets/cutouts-opt/hang.png';
+import diemCutout from '../assets/cutouts-opt/diem.png';
+import quynhCutout from '../assets/cutouts-opt/quynh.png';
+import quocAnhCutout from '../assets/cutouts-opt/quoc-anh.png';
+import thuCutout from '../assets/cutouts-opt/thu.png';
+import thienCutout from '../assets/cutouts-opt/thien.png';
 
 export const DEFAULT_FISH_PHOTOS = {
   bao: baoPhoto,
@@ -25,13 +25,13 @@ export const DEFAULT_FISH_PHOTOS = {
 };
 
 export const DEFAULT_FISH_CUTOUTS = {
-  bao: { src: baoCutout, width: 1025, height: 1535 },
-  hang: { src: hangCutout, width: 557, height: 843 },
-  diem: { src: diemCutout, width: 1254, height: 1254 },
-  quynh: { src: quynhCutout, width: 1024, height: 1536 },
-  'quoc-anh': { src: quocAnhCutout, width: 1024, height: 1535 },
-  thu: { src: thuCutout, width: 1025, height: 1534 },
-  thien: { src: thienCutout, width: 1254, height: 1254 },
+  bao: { src: baoCutout, width: 481, height: 720 },
+  hang: { src: hangCutout, width: 476, height: 720 },
+  diem: { src: diemCutout, width: 720, height: 720 },
+  quynh: { src: quynhCutout, width: 480, height: 720 },
+  'quoc-anh': { src: quocAnhCutout, width: 480, height: 720 },
+  thu: { src: thuCutout, width: 481, height: 720 },
+  thien: { src: thienCutout, width: 720, height: 720 },
 };
 
 const BOOK_COLOR_PRESETS = [

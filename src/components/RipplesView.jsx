@@ -1,8 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import BrandIcon from './BrandIcon.jsx';
+import {
+  BubbleLayer,
+  PondSurface,
+  RippleBurst,
+  TideWave,
+  haptic,
+  useBubbles,
+} from './PondEffects.jsx';
 
 const ECHO_EMOJIS = ['✦', '🌊', '🍋', '🔥', '🫶', '📸'];
+
+function depthClass(createdAt) {
+  const ts = new Date(createdAt).getTime();
+  if (Number.isNaN(ts)) return 'depth-surface';
+  const ageHours = Math.max(0, (Date.now() - ts) / 3600000);
+  if (ageHours < 24) return 'depth-surface';
+  if (ageHours < 72) return 'depth-shallow';
+  if (ageHours < 168) return 'depth-mid';
+  return 'depth-deep';
+}
 
 const BRAND_RIPPLE_ICONS = {
   ripple: 'futs-wave',
@@ -465,7 +483,7 @@ export function LatestRippleWidget({
               </p>
 
               <div className="home-ripple-actions">
-                <div className="ripple-echo-row" role="group" aria-label="Quick echoes">
+                <div className="ripple-echo-row" role="group" aria-label="Quick bubbles">
                   {ECHO_EMOJIS.slice(0, 3).map((emoji) => {
                     const list = latestRipple.reactions?.[emoji] ?? [];
                     const active = list.includes(currentMemberId);
@@ -514,6 +532,8 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
   const [cameraError, setCameraError] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
   const [sending, setSending] = useState(false);
+  const [dropping, setDropping] = useState(false);
+  const [shutterPulse, setShutterPulse] = useState(0);
   const [retrySeed, setRetrySeed] = useState(0);
 
   const videoRef = useRef(null);
@@ -618,6 +638,8 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
     }
     ctx.drawImage(video, sx, sy, side, side, 0, 0, target, target);
     setCapturedUrl(canvas.toDataURL('image/jpeg', 0.86));
+    setShutterPulse(Date.now());
+    haptic(12);
   };
 
   const handleFilePick = async (file) => {
@@ -647,10 +669,15 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
         tripId,
       });
       if (created) {
-        setCapturedUrl('');
-        setCaption('');
-        setPlace('');
-        setTripId('');
+        setDropping(true);
+        haptic(16);
+        window.setTimeout(() => {
+          setCapturedUrl('');
+          setCaption('');
+          setPlace('');
+          setTripId('');
+          setDropping(false);
+        }, 450);
       }
     } finally {
       setSending(false);
@@ -683,8 +710,13 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
       />
 
       <div className="ripple-live-stage">
+        <RippleBurst trigger={shutterPulse} tone="citrus" />
         {capturedUrl ? (
-          <img src={capturedUrl} alt="Captured ripple preview" className="ripple-live-media" />
+          <img
+            src={capturedUrl}
+            alt="Captured ripple preview"
+            className={`ripple-live-media${dropping ? ' is-dropping' : ''}`}
+          />
         ) : cameraError ? (
           <div className="ripple-live-fallback">
             <span className="ripple-dropzone-mark">
@@ -747,7 +779,7 @@ function LiveRippleCamera({ outings = [], onCreateRipple }) {
 
           <button
             type="button"
-            className="ripple-shutter-btn"
+            className="ripple-shutter-btn pond-shutter"
             onClick={handleCapture}
             disabled={!cameraReady}
             aria-label="Take ripple photo"
@@ -853,7 +885,7 @@ function PondCalendarModal({
         <div className="modal-heading">
           <div>
             <span className="eyebrow">Archive by day</span>
-            <h2 id="pond-calendar-title">Pond Calendar</h2>
+            <h2 id="pond-calendar-title">Tide Calendar</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
             <RippleIcon name="close" size={18} />
@@ -953,8 +985,13 @@ export default function RipplesView({
   const [vaultTripId, setVaultTripId] = useState(() => outings[0]?.id || '');
   const [savedNotice, setSavedNotice] = useState('');
   const [monthOffset, setMonthOffset] = useState(0);
+  const [freshId, setFreshId] = useState('');
+  const [tideWave, setTideWave] = useState(null);
 
   const spotlightRef = useRef(null);
+  const knownIdsRef = useRef(null);
+
+  const { bubbles, spawnBubble } = useBubbles();
 
   useEffect(() => {
     if (!vaultTripId && outings[0]?.id) {
@@ -967,6 +1004,33 @@ export default function RipplesView({
     for (const m of members) map[m.id] = m;
     return map;
   }, [members]);
+
+  useEffect(() => {
+    if (knownIdsRef.current === null) {
+      knownIdsRef.current = new Set(ripples.map((r) => r.id));
+      return;
+    }
+    const newOnes = ripples.filter((r) => !knownIdsRef.current.has(r.id));
+    if (newOnes.length === 0) return;
+
+    newOnes.forEach((r) => knownIdsRef.current.add(r.id));
+    const newest = newOnes[0];
+    setFreshId(newest.id);
+    haptic(14);
+
+    if (newest.memberId !== currentMemberId) {
+      const sender = memberMap[newest.memberId];
+      setTideWave({
+        id: newest.id,
+        name: sender?.nickname || sender?.name || 'A fish',
+      });
+    }
+
+    const timer = window.setTimeout(() => {
+      setFreshId((cur) => (cur === newest.id ? '' : cur));
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [ripples, currentMemberId, memberMap]);
 
   const filteredRipples = useMemo(() => {
     if (memberFilter === 'all') return ripples;
@@ -1040,12 +1104,16 @@ export default function RipplesView({
   const isOwner = spotlightRipple?.memberId === currentMemberId;
 
   return (
-    <section className="page-section ripples-page">
+    <section className="page-section ripples-page pond-page">
+      <PondSurface reduceMotion={reduceMotion} />
+      <BubbleLayer bubbles={bubbles} />
+      <TideWave wave={tideWave} onDone={() => setTideWave(null)} />
+
       <div className="page-title-row">
         <div>
           <span className="eyebrow">Pond ripples · Live</span>
           <h1>Ripples</h1>
-          <p>Quick frames from all seven fishes—echo back in real time or archive keepers straight into Trip Vault.</p>
+          <p>Drop a frame into the pond — the other six feel the ripple in real time. Older frames sink slowly; keepers rise into Trip Vault.</p>
         </div>
 
         <div className="ripples-head-actions">
@@ -1054,7 +1122,7 @@ export default function RipplesView({
             className="button button-secondary"
             onClick={() => setShowCalendar(true)}
           >
-            <RippleIcon name="calendar" size={17} /> Pond Calendar
+            <RippleIcon name="calendar" size={17} /> Tide Calendar
           </button>
 
           {!isTouchDevice && (
@@ -1125,9 +1193,27 @@ export default function RipplesView({
               <article ref={spotlightRef} className="ripples-spotlight-card">
                 <HudCorners />
                 <div className="ripples-spotlight-media">
-                  <img
+                  <motion.img
+                    key={spotlightRipple.id}
                     src={spotlightRipple.imageUrl}
                     alt={spotlightRipple.caption || 'Selected sky ripple'}
+                    initial={
+                      reduceMotion
+                        ? false
+                        : {
+                            opacity: 0,
+                            y: 18,
+                            scale: 1.04,
+                            filter: 'blur(14px) saturate(0.55) brightness(0.8)',
+                          }
+                    }
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      filter: 'blur(0px) saturate(1) brightness(1)',
+                    }}
+                    transition={{ duration: reduceMotion ? 0.01 : 0.9, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
 
@@ -1163,8 +1249,8 @@ export default function RipplesView({
                   </p>
 
                   <div className="ripples-echo-section">
-                    <span className="ripples-sub-label">Echoes</span>
-                    <div className="ripple-echo-row" role="group" aria-label="Echo reactions">
+                    <span className="ripples-sub-label">Bubbles</span>
+                    <div className="ripple-echo-row" role="group" aria-label="Bubble reactions">
                       {ECHO_EMOJIS.map((emoji) => {
                         const list = spotlightRipple.reactions?.[emoji] ?? [];
                         const active = list.includes(currentMemberId);
@@ -1177,8 +1263,15 @@ export default function RipplesView({
                             type="button"
                             className={`ripple-echo-chip${active ? ' is-active' : ''}`}
                             aria-pressed={active}
-                            title={names ? `${emoji} ${names}` : `React with ${emoji}`}
-                            onClick={() => onToggleReaction?.(spotlightRipple.id, emoji)}
+                            title={names ? `${emoji} ${names}` : `Send a bubble ${emoji}`}
+                            onClick={(event) => {
+                              if (!active) {
+                                const rect = event.currentTarget.getBoundingClientRect();
+                                spawnBubble(emoji, rect.left + rect.width / 2, rect.top);
+                                haptic(8);
+                              }
+                              onToggleReaction?.(spotlightRipple.id, emoji);
+                            }}
                           >
                             <span>{emoji}</span>
                             {list.length > 0 && <strong>{list.length}</strong>}
@@ -1190,7 +1283,7 @@ export default function RipplesView({
 
                   <div className="ripples-notes-section">
                     <span className="ripples-sub-label">
-                      Surface notes ({String(spotlightRipple.notes?.length || 0).padStart(2, '0')})
+                      Float notes ({String(spotlightRipple.notes?.length || 0).padStart(2, '0')})
                     </span>
                     <div className="ripples-notes-list">
                       {(spotlightRipple.notes ?? []).length === 0 ? (
@@ -1289,11 +1382,12 @@ export default function RipplesView({
                   (sum, arr) => sum + arr.length,
                   0,
                 );
+                const isFresh = ripple.id === freshId;
                 return (
                   <button
                     key={ripple.id}
                     type="button"
-                    className={`ripples-grid-card${isSelected ? ' is-selected' : ''}`}
+                    className={`ripples-grid-card ${depthClass(ripple.createdAt)}${isSelected ? ' is-selected' : ''}${isFresh ? ' is-fresh' : ''}`}
                     onClick={() => focusRipple(ripple.id)}
                   >
                     <div className="ripples-grid-media">
@@ -1302,9 +1396,10 @@ export default function RipplesView({
                         alt={ripple.caption || 'Group ripple'}
                         loading="lazy"
                       />
+                      {isFresh && <RippleBurst trigger={freshId} tone="sea" />}
                       <span className="ripples-grid-time">{formatRelativeTime(ripple.createdAt)}</span>
                       {reactionTotal > 0 && (
-                        <span className="ripples-grid-echoes">✦ {reactionTotal}</span>
+                        <span className="ripples-grid-echoes">🫧 {reactionTotal}</span>
                       )}
                     </div>
                     <div className="ripples-grid-foot">

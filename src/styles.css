@@ -316,7 +316,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   top: 0;
   z-index: 20;
   min-height: 76px;
-  padding: 12px 0;
+  padding: max(12px, env(safe-area-inset-top)) 0 12px;
   border-bottom: 1px solid var(--color-line);
   background: color-mix(in srgb, var(--color-page) 78%, transparent);
   backdrop-filter: blur(18px);
@@ -1014,7 +1014,7 @@ h1, h2, h3 { color: var(--color-text); }
 @media (max-width: 600px) {
   .studio-header {
     min-height: 64px;
-    padding: 10px 0;
+    padding: max(10px, env(safe-area-inset-top)) 0 10px;
   }
   .studio-header-inner { padding: 0 16px; }
   .brand-lockup strong { font-size: 15px; }
@@ -4426,6 +4426,7 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   --lgt-lens-top: -7px;
   --lgt-lens-h: calc(100% + 14px);
   --lgt-band-h: 7px;
+  width: min(100%, 408px);
   height: 60px;
   padding: 5px 8px;
   gap: 2px;
@@ -4601,7 +4602,9 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 /* Mobile Dock Variant (faithful stacked lift + label reveal) */
 .lgt-bar--dock .lgt-item {
   flex-direction: column;
-  width: 62px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 62px;
   height: 50px;
   padding: 4px 2px;
   gap: 3px;
@@ -7581,11 +7584,10 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 /* Mobile 6-tab dock fit on narrow screens */
 @media (max-width: 440px) {
   .lgt-bar--dock .lgt-item {
-    width: 52px;
     padding: 4px 1px;
   }
   .lgt-bar--dock .lgt-notice {
-    right: 11px;
+    right: 10px;
   }
 }
 
@@ -8900,5 +8902,418 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   }
   .sky-replay-mosaic {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.lazy-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 24px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-line);
+  background: var(--surface-panel);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   Pond water language — Ripples
+   ========================================================= */
+
+.pond-page {
+  position: relative;
+  isolation: isolate;
+}
+.pond-page > *:not(.pond-surface):not(.pond-tide) {
+  position: relative;
+  z-index: 1;
+}
+
+.pond-surface {
+  position: absolute;
+  inset: -24px -16px;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  pointer-events: none;
+}
+
+.pond-depth {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(212, 234, 255, 0.65),
+    rgba(244, 245, 250, 0) 40%,
+    rgba(1, 146, 198, 0.1) 100%
+  );
+}
+.theme-dark .pond-depth {
+  background: linear-gradient(
+    180deg,
+    rgba(1, 146, 198, 0.1) 0%,
+    rgba(13, 28, 71, 0) 35%,
+    rgba(8, 18, 51, 0.55) 100%
+  );
+}
+
+.pond-caustics {
+  position: absolute;
+  inset: -12%;
+  opacity: 0.22;
+}
+.theme-dark .pond-caustics {
+  opacity: 0.35;
+}
+
+.pond-caustics--noise {
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.011 0.028' numOctaves='2' seed='7'/><feColorMatrix type='matrix' values='0 0 0 0 0.004  0 0 0 0 0.573  0 0 0 0 0.776  0 0 0 0.45 0'/></filter><rect width='320' height='320' filter='url(%23n)'/></svg>");
+  background-size: 360px 360px;
+  animation: pond-drift-a 38s linear infinite alternate;
+}
+
+.pond-caustics--glow {
+  background-image:
+    radial-gradient(420px 240px at 22% 18%, rgba(1, 146, 198, 0.26), transparent 70%),
+    radial-gradient(360px 220px at 78% 64%, rgba(1, 146, 198, 0.18), transparent 70%),
+    radial-gradient(140px 90px at 64% 22%, rgba(241, 255, 98, 0.12), transparent 75%);
+  background-size: 120% 120%;
+  animation: pond-drift-b 54s linear infinite alternate;
+}
+
+@keyframes pond-drift-a {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 60%; }
+}
+@keyframes pond-drift-b {
+  0% { background-position: 0% 20%; }
+  100% { background-position: 80% 90%; }
+}
+
+.pond-burst {
+  position: absolute;
+  left: var(--bx, 50%);
+  top: var(--by, 50%);
+  width: 180px;
+  height: 180px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+}
+.pond-burst span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--palette-sea);
+  opacity: 0;
+  animation: pond-burst-ring 950ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.pond-burst--citrus span {
+  border-color: var(--palette-sea);
+}
+.theme-dark .pond-burst--citrus span {
+  border-color: var(--palette-citrus);
+}
+.pond-burst span:nth-child(2) {
+  animation-delay: 120ms;
+}
+.pond-burst span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes pond-burst-ring {
+  0% {
+    transform: scale(0.15);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* Rising emoji bubbles */
+.pond-bubble-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pond-bubble {
+  position: fixed;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  font-size: 22px;
+  line-height: 1;
+}
+.pond-bubble::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(212, 234, 255, 0.18);
+  border: 1px solid rgba(212, 234, 255, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.pond-bubble span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Realtime TideWave notification */
+.pond-tide {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--palette-sea);
+  background: rgba(244, 245, 250, 0.92);
+  color: var(--palette-deep);
+  font-size: 0.88rem;
+  font-weight: 700;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 14px 36px rgba(17, 35, 88, 0.18);
+  overflow: hidden;
+  max-width: calc(100vw - 32px);
+}
+.theme-dark .pond-tide {
+  background: rgba(13, 28, 71, 0.9);
+  border-color: var(--palette-citrus);
+  color: var(--palette-white);
+  box-shadow: 0 16px 40px rgba(4, 11, 32, 0.55);
+}
+.pond-tide-wave {
+  position: absolute;
+  inset: auto 0 2px 0;
+  width: 100%;
+  height: 10px;
+  color: var(--palette-sea);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.theme-dark .pond-tide-wave {
+  color: var(--palette-citrus);
+}
+.pond-tide-text {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .pond-tide {
+    top: 72px;
+  }
+}
+
+/* Pond grid depth (sinking over time) */
+.ripples-grid-card .ripples-grid-media img {
+  transition: filter 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease, transform 0.35s ease;
+}
+.ripples-grid-card.depth-surface {
+  opacity: 1;
+}
+.ripples-grid-card.depth-shallow {
+  opacity: 0.92;
+}
+.ripples-grid-card.depth-shallow .ripples-grid-media img {
+  filter: saturate(0.92) brightness(0.96);
+}
+.ripples-grid-card.depth-mid {
+  opacity: 0.82;
+}
+.ripples-grid-card.depth-mid .ripples-grid-media img {
+  filter: saturate(0.78) brightness(0.88) blur(0.4px);
+}
+.ripples-grid-card.depth-deep {
+  opacity: 0.7;
+}
+.ripples-grid-card.depth-deep .ripples-grid-media img {
+  filter: saturate(0.6) brightness(0.78) blur(0.8px);
+}
+.ripples-grid-card:hover,
+.ripples-grid-card:focus-visible {
+  opacity: 1;
+}
+.ripples-grid-card:hover .ripples-grid-media img,
+.ripples-grid-card:focus-visible .ripples-grid-media img {
+  filter: none;
+}
+
+/* Fresh ripple drop-in & camera send drop-out */
+.ripples-grid-card.is-fresh {
+  animation: pond-drop-in 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pond-drop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1.06);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.ripple-live-media {
+  transition: transform 0.42s ease-in, opacity 0.42s ease-in, filter 0.42s ease-in;
+}
+.ripple-live-media.is-dropping {
+  transform: translateY(26px) scale(0.82);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+/* Breathing shutter ring */
+.pond-shutter:not(:disabled) {
+  animation: pond-breathe 3.2s ease-in-out infinite;
+}
+@keyframes pond-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(1, 146, 198, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(1, 146, 198, 0);
+  }
+}
+.theme-dark .pond-shutter:not(:disabled) {
+  animation-name: pond-breathe-dark;
+}
+@keyframes pond-breathe-dark {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(241, 255, 98, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(241, 255, 98, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-caustics,
+  .pond-burst,
+  .pond-bubble-layer {
+    display: none !important;
+  }
+  .ripples-grid-card.is-fresh,
+  .pond-shutter {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   Multi-Device Polish (Mobile PWA, iPad Portrait, GPU)
+   ========================================================= */
+
+.poll-modal,
+.sky-replay-modal,
+.pond-calendar-modal {
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 430px) {
+  .topbar-new {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .topbar-new span {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 761px) {
+  .lgt-bar--header .lgt-item {
+    padding: 0 10px;
+    gap: 5px;
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-day {
+    min-height: 52px;
+    padding-bottom: 14px;
+  }
+  .cal-free-count {
+    left: 0;
+    right: 0;
+    bottom: 3px;
+    text-align: center;
+    font-size: 8.5px;
+  }
+}
+
+@media (pointer: coarse) {
+  .pond-caustics--noise {
+    display: none;
+  }
+  .pond-caustics--glow {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   Native Mobile App Polish (iOS + Android)
+   ========================================================= */
+
+html,
+body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role='tab'],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+.lgt-bar,
+.lgt-item,
+.studio-header button,
+.mobile-nav {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.app-main {
+  min-height: calc(100dvh - 76px);
+}
+
+@media (max-width: 760px) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
+  }
+  .poll-modal,
+  .sky-replay-modal,
+  .pond-calendar-modal,
+  .vault-modal {
+    max-height: 92dvh;
   }
 }

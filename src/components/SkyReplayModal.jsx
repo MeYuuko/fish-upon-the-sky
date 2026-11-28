@@ -212,7 +212,7 @@ export default function SkyReplayModal({
                 <div className="sky-replay-stat">
                   <BrandIcon name="futs-chat" size={20} />
                   <strong>{String(stats.echoesAndNotes).padStart(2, '0')}</strong>
-                  <span>Echoes &amp; surface notes</span>
+                  <span>Bubbles &amp; float notes</span>
                 </div>
                 <div className="sky-replay-stat">
                   <BrandIcon name="futs-compass" size={20} />
@@ -243,9 +243,9 @@ export default function SkyReplayModal({
                     <span>{crewStats.topVoter?.pollResponses ?? 0} polls answered</span>
                   </div>
                   <div className="sky-replay-award">
-                    <span className="eyebrow">ECHO MAGNET</span>
+                    <span className="eyebrow">BUBBLE MAGNET</span>
                     <strong>{crewStats.echoMagnet?.member?.nickname || crewStats.echoMagnet?.member?.name || '—'}</strong>
-                    <span>{crewStats.echoMagnet?.echoesReceived ?? 0} echoes received</span>
+                    <span>{crewStats.echoMagnet?.echoesReceived ?? 0} bubbles received</span>
                   </div>
                 </div>
 
