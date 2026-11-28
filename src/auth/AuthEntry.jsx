@@ -390,6 +390,7 @@ function Field({ name, label, icon, type = 'text', autoComplete, error, actionEr
 export default function AuthEntry({
   authConfigured, googleAvailable = false, onGoogleSignIn, onSignIn, onSendDeviceCode, onVerifyDeviceCode,
   onStartRecovery, onVerifyRecoveryCode, onSubmitRecoveryPassword, onFinalize,
+  onDevLogin, people = [],
 }) {
   const [screen, setScreen] = useState('signIn');
   const [hovering, setHovering] = useState(false);
@@ -697,6 +698,31 @@ export default function AuthEntry({
                   </button>
                 </form>
               </>
+            )}
+
+            {screen === 'signIn' && onDevLogin && (
+              <div className="auth-dev-section">
+                <div className="auth-dev-divider">
+                  <span />
+                  <strong>Vào nhanh · Local Dev</strong>
+                  <span />
+                </div>
+                <p className="auth-dev-hint">Chọn thành viên để vào ngay ứng dụng mà không cần Google OAuth:</p>
+                <div className="auth-dev-chips">
+                  {people.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="auth-dev-chip"
+                      onClick={() => onDevLogin(p.id)}
+                      title={`Đăng nhập nhanh với tư cách ${p.name}`}
+                    >
+                      <span className={`avatar avatar-${p.color} avatar-small`}>{p.name.slice(0, 1)}</span>
+                      <span>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <span className="sr-only" role="alert" aria-atomic="true">

@@ -99,7 +99,7 @@ export default function LiquidGlassTabBar({
 
   const measureTarget = (idx) => {
     const btn = itemRefs.current[idx];
-    if (!btn) return null;
+    if (!btn || btn.offsetWidth === 0) return null;
     return {
       left: btn.offsetLeft - overhang,
       width: btn.offsetWidth + overhang * 2,

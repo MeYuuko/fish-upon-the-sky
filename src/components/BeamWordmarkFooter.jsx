@@ -345,21 +345,15 @@ export default function BeamWordmarkFooter({
   const delay = () => ({ '--bwf-d': (d += 70) + 'ms' });
 
   return (
-    <motion.div
-      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: [0.22, 1, 0.36, 1] }}
+    <footer
+      ref={rootRef}
+      className={'bwf ' + className}
+      style={vars}
+      data-in="true"
+      onPointerMove={onPointer}
+      onPointerEnter={onPointer}
+      onPointerLeave={onPointer}
     >
-      <footer
-        ref={rootRef}
-        className={'bwf ' + className}
-        style={vars}
-        data-in={seen || reduceMotion ? 'true' : 'false'}
-        onPointerMove={onPointer}
-        onPointerEnter={onPointer}
-        onPointerLeave={onPointer}
-      >
         <div className="bwf-rule" aria-hidden="true" />
         <div className="bwf-sky" aria-hidden="true">
           <div className="bwf-wash" />
@@ -457,6 +451,5 @@ export default function BeamWordmarkFooter({
           <div className="bwf-foot" aria-hidden="true" />
         </div>
       </footer>
-    </motion.div>
   );
 }

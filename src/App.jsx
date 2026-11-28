@@ -173,8 +173,8 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
     });
   };
   return <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <motion.form className="poll-modal" onSubmit={submit} initial={{ opacity: 0, y: reduceMotion ? 0 : 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: reduceMotion ? 0 : 12, scale: 0.98 }} transition={{ duration: 0.22 }}>
-      <div className="modal-heading"><div><span className="eyebrow">Start with the calendar</span><h2>Make a new plan</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><Icon name="close" /></button></div>
+    <motion.form className="poll-modal" role="dialog" aria-modal="true" aria-labelledby="new-poll-modal-title" onSubmit={submit} initial={{ opacity: 0, y: reduceMotion ? 0 : 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: reduceMotion ? 0 : 12, scale: 0.98 }} transition={{ duration: 0.22 }}>
+      <div className="modal-heading"><div><span className="eyebrow">Start with the calendar</span><h2 id="new-poll-modal-title">Make a new plan</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><Icon name="close" /></button></div>
       <label className="field-label" htmlFor="poll-title">What are we planning?</label>
       <input id="poll-title" className="text-input" placeholder="A little afternoon together" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={64} required />
       <label className="field-label" htmlFor="poll-deadline">Vote closes</label>
@@ -219,8 +219,8 @@ function HomeView({ polls, outings, members, onNewPoll, onVote, currentMemberId,
         <section id="active-vote" className="studio-poll-section">
           <div className="studio-section-bar">
             <div>
-              <span className="eyebrow">A decision in progress</span>
-              <h2>Pick a time that works</h2>
+              <span className="eyebrow">Open vote</span>
+              <h2>Vote on the next outing</h2>
             </div>
             <DotRule />
             <button type="button" className="text-button" onClick={() => goTo('outings')}>
@@ -410,7 +410,7 @@ function CalendarView({
   };
 
   return <section className="page-section calendar-page">
-    <div className="page-title-row"><div><span className="eyebrow">All seven schedules, one view</span><h1>Find a day that fits.</h1><p>Tap a date to mark yourself busy, or connect Google Calendar to sync automatically.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> Open a new vote</button></div>
+    <div className="page-title-row"><div><span className="eyebrow">All seven schedules, one view</span><h1>Group schedule</h1><p>Tap a date to mark yourself busy, or connect Google Calendar to sync automatically.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> Open a new vote</button></div>
     <div className="calendar-layout">
       <section className="calendar-card">
         <div className="calendar-toolbar"><button className="icon-button" aria-label="Previous month" onClick={() => setMonthOffset((value) => value - 1)}>‹</button><h2>{title}</h2><button className="icon-button" aria-label="Next month" onClick={() => setMonthOffset((value) => value + 1)}>›</button></div>
@@ -534,15 +534,15 @@ function OutingsView({ polls, outings, onNewPoll, currentMemberId, onVote, goTo,
   const openPolls = polls.filter((poll) => poll.status === 'Voting');
 
   return <section className="page-section">
-    <div className="page-title-row"><div><span className="eyebrow">Ideas turn into good days</span><h1>Outings & plans.</h1><p>From the first idea to the little checklist that gets everyone out the door.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> New outing poll</button></div>
+    <div className="page-title-row"><div><span className="eyebrow">Plans &amp; votes</span><h1>Outings</h1><p>Track polls, confirmed dates, and trip archives in one place.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> New outing poll</button></div>
     {openPolls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{openPolls.map((poll) => <VoteCard key={poll.id} poll={poll} currentMemberId={currentMemberId} onToggleVote={onVote} />)}</div></div>}
     <SectionHeading kicker="The group’s story" title="Every plan has a place" />
     {outings.length === 0 ? (
       <div className="soft-callout">
         <span className="callout-illustration"><Icon name="spark" size={23} /></span>
         <div>
-          <strong>Chưa có kế hoạch nào — tạo poll đầu tiên</strong>
-          <p>Bấm “New outing poll” để cả nhóm cùng chọn ngày, địa điểm và ngân sách.</p>
+          <strong>No outings planned yet</strong>
+          <p>Start a poll so everyone can pick a date, place, and budget.</p>
         </div>
       </div>
     ) : (
@@ -560,6 +560,7 @@ export function PlannerApp({
   onUpdateGoogleToken,
   onClearGoogleToken,
   onSignOut,
+  onSwitchMember,
   passwordResetNotice,
 }) {
   const reduceMotion = useReducedMotion();
@@ -637,6 +638,7 @@ export function PlannerApp({
   };
 
   return <div className={`app-shell${theme === 'dark' ? ' theme-dark' : ''}`}>
+    <a className="skip-link" href="#main-content">Skip to main content</a>
     <AnimatePresence>
       {showReveal && (
         <WelcomeReveal
@@ -648,49 +650,69 @@ export function PlannerApp({
     </AnimatePresence>
 
     <header className="studio-header">
-      <div className="header-left">
-        <button type="button" className="brand-lockup" onClick={() => navigateToTab('home')} aria-label="Fish Upon The Sky home">
-          <img className="brand-fish" src={logo} alt="" />
-          <strong>Fish Upon The Sky</strong>
-        </button>
-      </div>
-
-      <nav className="header-nav" aria-label="Main navigation">
-        <LiquidGlassTabBar
-          items={navTabs}
-          activeId={activeTab}
-          onChange={navigateToTab}
-          variant="header"
-          ariaLabel="Primary pages"
-        />
-      </nav>
-
-      <div className="header-actions">
-        <button
-          type="button"
-          className="icon-button theme-toggle"
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
-        >
-          <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
-        </button>
-
-        <div className="topbar-member" title={currentUserEmail ? `Signed in as ${currentMember.name} (${currentUserEmail})` : `Signed in as ${currentMember.name}`}>
-          <Avatar person={currentMember} small />
-          <span>{displayName}</span>
+      <div className="studio-header-inner">
+        <div className="header-left">
+          <button type="button" className="brand-lockup" onClick={() => navigateToTab('home')} aria-label="Fish Upon The Sky home">
+            <img className="brand-fish" src={logo} alt="" />
+            <strong>Fish Upon The Sky</strong>
+          </button>
         </div>
 
-        <button type="button" className="button button-primary topbar-new" onClick={() => setShowPollModal(true)}>
-          <Icon name="plus" size={17} /> <span>New plan</span>
-        </button>
+        <nav className="header-nav" aria-label="Main navigation">
+          <LiquidGlassTabBar
+            items={navTabs}
+            activeId={activeTab}
+            onChange={navigateToTab}
+            variant="header"
+            ariaLabel="Primary pages"
+          />
+        </nav>
 
-        <SessionExitButton onExit={onSignOut} />
+        <div className="header-actions">
+          <button
+            type="button"
+            className="icon-button theme-toggle"
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+          >
+            <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
+          </button>
+
+          <div className="topbar-member" title={currentUserEmail ? `Signed in as ${currentMember.name} (${currentUserEmail})` : `Signed in as ${currentMember.name}`}>
+            <Avatar person={currentMember} small />
+            <span>{displayName}</span>
+          </div>
+
+          {onSwitchMember && (
+            <div className="topbar-dev-switch" title="Chuyển đổi thành viên (Local Dev)">
+              <span className="dev-tag">DEV</span>
+              <select
+                className="topbar-dev-select"
+                value={currentMemberId}
+                onChange={(e) => onSwitchMember(e.target.value)}
+                aria-label="Switch member"
+              >
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button type="button" className="button button-primary topbar-new" onClick={() => setShowPollModal(true)}>
+            <Icon name="plus" size={17} /> <span>New plan</span>
+          </button>
+
+          <SessionExitButton onExit={onSignOut} />
+        </div>
       </div>
     </header>
 
     {passwordResetNotice && <p className="planner-reset-notice">{passwordResetNotice}</p>}
-    {loading && <p className="planner-reset-notice" role="status">Đang đồng bộ…</p>}
+    {loading && <p className="planner-reset-notice" role="status">Syncing group data…</p>}
     {syncError && (
       <p
         className="planner-reset-notice"
@@ -698,12 +720,12 @@ export function PlannerApp({
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}
       >
         <span>{syncError}</span>
-        <button type="button" className="quiet-button" onClick={dismissError}>Đóng</button>
+        <button type="button" className="quiet-button" onClick={dismissError}>Dismiss</button>
       </p>
     )}
 
     <div className="app-main">
-      <main className="page-content">
+      <main id="main-content" tabIndex={-1} className="page-content">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
@@ -895,10 +917,35 @@ function MemberGate({
   );
 }
 
+const DEV_LOGIN_ENABLED = import.meta.env.DEV;
+
 export default function App() {
   const [googleSession, setGoogleSession] = useState(null);
   const [checkingGoogle, setCheckingGoogle] = useState(hasSupabaseConfiguration);
   const [googleAccessToken, setGoogleAccessToken] = useState('');
+  const [devMemberId, setDevMemberId] = useState(() => {
+    if (!DEV_LOGIN_ENABLED) return null;
+    try {
+      return localStorage.getItem('fish-dev-member') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleDevLogin = (memberId) => {
+    if (!DEV_LOGIN_ENABLED) return;
+    setDevMemberId(memberId);
+    try {
+      localStorage.setItem('fish-dev-member', memberId);
+    } catch {}
+  };
+
+  const handleDevSignOut = () => {
+    setDevMemberId(null);
+    try {
+      localStorage.removeItem('fish-dev-member');
+    } catch {}
+  };
 
   useEffect(() => {
     if (!hasSupabaseConfiguration) return undefined;
@@ -963,6 +1010,22 @@ export default function App() {
     setGoogleAccessToken('');
   }
 
+  if (DEV_LOGIN_ENABLED && devMemberId) {
+    return (
+      <PlannerApp
+        client={null}
+        currentMemberId={devMemberId}
+        currentUserEmail={`${devMemberId}@fishuponthesky.local`}
+        googleAccessToken={googleAccessToken}
+        onUpdateGoogleToken={updateGoogleToken}
+        onClearGoogleToken={clearGoogleToken}
+        onSignOut={handleDevSignOut}
+        onSwitchMember={handleDevLogin}
+        passwordResetNotice={null}
+      />
+    );
+  }
+
   if (checkingGoogle) {
     return (
       <AuthLayout>
@@ -992,6 +1055,8 @@ export default function App() {
       publishableKey={clerkPublishableKey}
       googleAvailable={hasSupabaseConfiguration}
       onGoogleSignIn={handleGoogleSignIn}
+      onDevLogin={DEV_LOGIN_ENABLED ? handleDevLogin : undefined}
+      people={people}
       renderPlanner={(identity) => (
         <MemberGate
           {...identity}

@@ -12,12 +12,106 @@ import {
 } from './groupApi.js';
 import { uploadImage } from './images.js';
 
+const SAMPLE_POLLS = [
+  {
+    id: 'poll-weekend-gathering',
+    title: 'Weekend coffee & catch up',
+    detail: 'Pick the time that works best for you.',
+    deadline: 'Sun, Nov 30',
+    deadlineDate: '2026-11-30',
+    options: [
+      { id: '2026-11-29', label: 'Sat, Nov 29 · 4:00 PM' },
+      { id: '2026-11-30', label: 'Sun, Nov 30 · 4:00 PM' },
+    ],
+    placeOptions: ['West Lake', 'Old Quarter', 'Let the group pick'],
+    budgetOptions: ['Under ₫300k', '₫300k–₫500k'],
+    status: 'Voting',
+    votes: {
+      bao: ['2026-11-29'],
+      hang: ['2026-11-29', '2026-11-30'],
+      diem: ['2026-11-29'],
+      quynh: ['2026-11-29'],
+    },
+    placeVotes: { bao: ['West Lake'], hang: ['West Lake'] },
+    budgetVotes: { bao: ['Under ₫300k'] },
+  },
+];
+
+const SAMPLE_OUTINGS = [
+  {
+    id: 'outing-west-lake',
+    title: 'Hồ Tây Sunset & Coffee',
+    date: 'Sat, Nov 29',
+    place: 'Hồ Tây, Hà Nội',
+    status: 'Confirmed',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [],
+    places: [{ id: 'pl-1', name: 'Trấn Vũ Coffee', category: 'Cafe', addedBy: 'Hằng' }],
+    notes: [{ id: 'nt-1', text: 'Hẹn nhau lúc 16:30 đón hoàng hôn.', author: 'Bảo', createdAt: 'Nov 27' }],
+  },
+  {
+    id: 'outing-bavi',
+    title: 'Chuyến đi Ba Vì cuối năm',
+    date: 'Dec 14 – 15',
+    place: 'Vườn quốc gia Ba Vì',
+    status: 'Planning',
+    sheetUrl: '',
+    albumUrl: '',
+    photos: [],
+    places: [{ id: 'pl-2', name: 'Đồi Thông', category: 'Camping', addedBy: 'Thiên' }],
+    notes: [{ id: 'nt-2', text: 'Mang áo ấm vì trên đồi gió lạnh.', author: 'Quỳnh', createdAt: 'Nov 26' }],
+  },
+  {
+    id: 'outing-memory',
+    title: 'Kỷ niệm 1 năm Fish Upon The Sky',
+    date: 'Oct 20',
+    place: 'Hà Nội',
+    status: 'Done',
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/preview',
+    albumUrl: '',
+    photos: [],
+    places: [{ id: 'pl-3', name: 'Home Studio', category: 'Dinner', addedBy: 'Diễm' }],
+    notes: [{ id: 'nt-3', text: 'Buổi tối nấu ăn cùng nhau siêu vui!', author: 'Thư', createdAt: 'Oct 21' }],
+  },
+];
+
+const SAMPLE_BUSY_DAYS = {
+  bao: ['2026-11-28'],
+  hang: ['2026-11-27', '2026-11-28'],
+  diem: ['2026-11-30'],
+};
+
 export function useGroupData(client, currentMemberId, people) {
-  const [members, setMembers] = useState(() => buildMemberProfiles(people, {}));
-  const [polls, setPolls] = useState([]);
-  const [outings, setOutings] = useState([]);
-  const [busyDays, setBusyDays] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState(() => {
+    try {
+      const local = !client && localStorage.getItem('fish-local-profiles');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return buildMemberProfiles(people, {});
+  });
+  const [polls, setPolls] = useState(() => {
+    try {
+      const local = !client && localStorage.getItem('fish-local-polls');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return !client ? SAMPLE_POLLS : [];
+  });
+  const [outings, setOutings] = useState(() => {
+    try {
+      const local = !client && localStorage.getItem('fish-local-outings');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return !client ? SAMPLE_OUTINGS : [];
+  });
+  const [busyDays, setBusyDays] = useState(() => {
+    try {
+      const local = !client && localStorage.getItem('fish-local-busy');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return !client ? SAMPLE_BUSY_DAYS : {};
+  });
+  const [loading, setLoading] = useState(Boolean(client));
   const [syncError, setSyncError] = useState('');
 
   const stateRef = useRef({ members, polls, outings, busyDays });
@@ -71,6 +165,12 @@ export function useGroupData(client, currentMemberId, people) {
 
   const dismissError = useCallback(() => setSyncError(''), []);
 
+  const saveLocal = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch {}
+  };
+
   const updateMemberProfile = useCallback(
     async (memberId, patch) => {
       if (memberId !== currentMemberId) {
@@ -86,7 +186,7 @@ export function useGroupData(client, currentMemberId, people) {
       let resolvedPatch = { ...patch };
 
       try {
-        if (typeof resolvedPatch.customPhoto === 'string' && resolvedPatch.customPhoto.startsWith('data:')) {
+        if (client && typeof resolvedPatch.customPhoto === 'string' && resolvedPatch.customPhoto.startsWith('data:')) {
           resolvedPatch.customPhoto = await uploadImage(
             client,
             `profiles/${memberId}`,
@@ -95,7 +195,7 @@ export function useGroupData(client, currentMemberId, people) {
           );
         }
 
-        if (Array.isArray(resolvedPatch.books)) {
+        if (client && Array.isArray(resolvedPatch.books)) {
           resolvedPatch.books = await Promise.all(
             resolvedPatch.books.map(async (book) => {
               if (typeof book?.image === 'string' && book.image.startsWith('data:')) {
@@ -120,6 +220,11 @@ export function useGroupData(client, currentMemberId, people) {
         const nextMembers = prevMembers.map((p) => (p.id === memberId ? updatedMember : p));
         setMembers(nextMembers);
 
+        if (!client) {
+          saveLocal('fish-local-profiles', nextMembers);
+          return { ok: true };
+        }
+
         await apiSaveProfile(client, memberId, serializeMemberProfile(updatedMember));
         return { ok: true };
       } catch (err) {
@@ -143,13 +248,17 @@ export function useGroupData(client, currentMemberId, people) {
         ? [...personVotes, optionId]
         : personVotes.filter((value) => value !== optionId);
 
-      setPolls((current) =>
-        current.map((poll) =>
-          poll.id === pollId
-            ? { ...poll, [voteKey]: { ...poll[voteKey], [currentMemberId]: nextVotes } }
-            : poll,
-        ),
+      const nextPolls = stateRef.current.polls.map((poll) =>
+        poll.id === pollId
+          ? { ...poll, [voteKey]: { ...poll[voteKey], [currentMemberId]: nextVotes } }
+          : poll,
       );
+      setPolls(nextPolls);
+
+      if (!client) {
+        saveLocal('fish-local-polls', nextPolls);
+        return;
+      }
 
       try {
         await apiSetVote(client, {
@@ -182,8 +291,16 @@ export function useGroupData(client, currentMemberId, people) {
         notes: [],
       };
 
-      setPolls((current) => [poll, ...current]);
-      setOutings((current) => [newOuting, ...current]);
+      const nextPolls = [poll, ...stateRef.current.polls];
+      const nextOutings = [newOuting, ...stateRef.current.outings];
+      setPolls(nextPolls);
+      setOutings(nextOutings);
+
+      if (!client) {
+        saveLocal('fish-local-polls', nextPolls);
+        saveLocal('fish-local-outings', nextOutings);
+        return;
+      }
 
       try {
         await apiCreatePoll(client, poll, newOuting, currentMemberId);
@@ -201,7 +318,13 @@ export function useGroupData(client, currentMemberId, people) {
       if (!currentTrip) return;
 
       const rawNext = typeof updater === 'function' ? updater(currentTrip) : updater;
-      setOutings((current) => current.map((t) => (t.id === tripId ? rawNext : t)));
+      const nextOutings = stateRef.current.outings.map((t) => (t.id === tripId ? rawNext : t));
+      setOutings(nextOutings);
+
+      if (!client) {
+        saveLocal('fish-local-outings', nextOutings);
+        return;
+      }
 
       try {
         let finalTrip = rawNext;
@@ -233,7 +356,14 @@ export function useGroupData(client, currentMemberId, people) {
 
   const addPastTrip = useCallback(
     async (newTrip) => {
-      setOutings((current) => [newTrip, ...current]);
+      const nextOutings = [newTrip, ...stateRef.current.outings];
+      setOutings(nextOutings);
+
+      if (!client) {
+        saveLocal('fish-local-outings', nextOutings);
+        return;
+      }
+
       try {
         await apiSaveOuting(client, newTrip, currentMemberId);
       } catch (err) {
@@ -257,7 +387,13 @@ export function useGroupData(client, currentMemberId, people) {
         ? [...currentList, dayKey]
         : currentList.filter((d) => d !== dayKey);
 
-      setBusyDays((old) => ({ ...old, [currentMemberId]: nextList }));
+      const nextBusy = { ...stateRef.current.busyDays, [currentMemberId]: nextList };
+      setBusyDays(nextBusy);
+
+      if (!client) {
+        saveLocal('fish-local-busy', nextBusy);
+        return;
+      }
 
       try {
         await apiSetBusyDay(client, currentMemberId, dayKey, busy);
@@ -273,7 +409,13 @@ export function useGroupData(client, currentMemberId, people) {
     async (dayKeys) => {
       const currentList = stateRef.current.busyDays[currentMemberId] ?? [];
       const merged = Array.from(new Set([...currentList, ...dayKeys]));
-      setBusyDays((old) => ({ ...old, [currentMemberId]: merged }));
+      const nextBusy = { ...stateRef.current.busyDays, [currentMemberId]: merged };
+      setBusyDays(nextBusy);
+
+      if (!client) {
+        saveLocal('fish-local-busy', nextBusy);
+        return;
+      }
 
       try {
         await apiAddBusyDays(client, currentMemberId, dayKeys);

@@ -42,7 +42,7 @@ function requireRecoveryConnection() {
   if (navigator.onLine === false) throw new ClerkOfflineError('Browser offline');
 }
 
-function SignInEntry({ googleAvailable, onGoogleSignIn, onPasswordReset }) {
+function SignInEntry({ googleAvailable, onGoogleSignIn, onPasswordReset, onDevLogin, people }) {
   const { signIn } = useSignIn();
   const recoveryAttempt = useRef(null);
 
@@ -117,10 +117,11 @@ function SignInEntry({ googleAvailable, onGoogleSignIn, onPasswordReset }) {
   return <AuthEntry authConfigured googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn}
     onSignIn={signInWithPassword} onSendDeviceCode={sendDeviceCode} onVerifyDeviceCode={verifyDeviceCode}
     onStartRecovery={startRecovery} onVerifyRecoveryCode={verifyRecoveryCode}
-    onSubmitRecoveryPassword={submitRecoveryPassword} onFinalize={finalize} />;
+    onSubmitRecoveryPassword={submitRecoveryPassword} onFinalize={finalize}
+    onDevLogin={onDevLogin} people={people} />;
 }
 
-function SessionGate({ googleAvailable, onGoogleSignIn, renderPlanner }) {
+function SessionGate({ googleAvailable, onGoogleSignIn, onDevLogin, people, renderPlanner }) {
   const auth = useAuth();
   const { isLoaded, user } = useUser();
   const { session } = useSession();
@@ -141,7 +142,7 @@ function SessionGate({ googleAvailable, onGoogleSignIn, renderPlanner }) {
     content = <AuthStatus heading="Opening your planner"><p role="status">Checking your sign-in…</p></AuthStatus>;
   } else if (!auth.isSignedIn) {
     content = <SignInEntry googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn}
-      onPasswordReset={setPasswordResetSessionId} />;
+      onPasswordReset={setPasswordResetSessionId} onDevLogin={onDevLogin} people={people} />;
   } else {
     content = <Fragment key={auth.sessionId}>
       {renderPlanner({
@@ -160,11 +161,11 @@ function SessionGate({ googleAvailable, onGoogleSignIn, renderPlanner }) {
   </>;
 }
 
-export default function ClerkAuthRoot({ publishableKey, googleAvailable = false, onGoogleSignIn, renderPlanner }) {
+export default function ClerkAuthRoot({ publishableKey, googleAvailable = false, onGoogleSignIn, onDevLogin, people, renderPlanner }) {
   if (!publishableKey) {
-    return <AuthEntry authConfigured={false} googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} />;
+    return <AuthEntry authConfigured={false} googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} onDevLogin={onDevLogin} people={people} />;
   }
   return <ClerkProvider publishableKey={publishableKey}>
-    <SessionGate googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} renderPlanner={renderPlanner} />
+    <SessionGate googleAvailable={googleAvailable} onGoogleSignIn={onGoogleSignIn} onDevLogin={onDevLogin} people={people} renderPlanner={renderPlanner} />
   </ClerkProvider>;
 }

@@ -29,13 +29,13 @@ const MOTION_CFG = {
   bookTilt: 14,
   bookOpen: 34,
   bookCycle: 3.6,
-  spotlight: { radius: 145, readyAfter: 1.35 },
+  spotlight: { radius: 145, readyAfter: 0.05 },
   cursor: { dot: 10, ring: 44, disc: 72, readLabel: 'Click' },
 };
 
 const MEDIA = {
   finePointer: '(hover: hover) and (pointer: fine)',
-  composition: '(min-width: 1024px) and (min-aspect-ratio: 5/4)',
+  composition: '(min-width: 900px) and (min-aspect-ratio: 1/1)',
   reducedMotion: '(prefers-reduced-motion: reduce)',
 };
 
@@ -949,7 +949,7 @@ export default function FishProfileView({
   const [editorBookIdx, setEditorBookIdx] = useState(0);
   const [folderOpen, setFolderOpen] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
-  const [spotReady, setSpotReady] = useState(false);
+  const [spotReady, setSpotReady] = useState(true);
   const [onScreen, setOnScreen] = useState(true);
 
   const sectionRef = useRef(null);
@@ -983,11 +983,9 @@ export default function FishProfileView({
     setEditorTab('basic');
     setEditorBookIdx(0);
     setFolderOpen(false);
-    setSpotReady(false);
+    setSpotReady(true);
     spotOpenRef.current = false;
     spotRadius.jump(0);
-    const timer = window.setTimeout(() => setSpotReady(true), MOTION_CFG.spotlight.readyAfter * 1000);
-    return () => window.clearTimeout(timer);
   }, [member?.id, spotRadius]);
 
   useEffect(() => {
@@ -1075,8 +1073,8 @@ export default function FishProfileView({
   const portraitHeight = member.cutoutHeight || 1535;
 
   const depthActive = finePointer && !reduceMotion && !editorOpen;
-  const spotActive = depthActive && composition && spotReady;
-  const cursorActive = finePointer && !reduceMotion && !editorOpen;
+  const spotActive = finePointer && composition && spotReady && !editorOpen;
+  const cursorActive = finePointer && composition && !reduceMotion && !editorOpen;
 
   const spotStyle = {
     '--ea-spot-x': spotXVar,
@@ -1087,9 +1085,11 @@ export default function FishProfileView({
   };
 
   const handlePointerMove = (event) => {
-    if (!depthActive) return;
-    pointerX.set((event.clientX / window.innerWidth) * 2 - 1);
-    pointerY.set((event.clientY / window.innerHeight) * 2 - 1);
+    if (editorOpen) return;
+    if (depthActive) {
+      pointerX.set((event.clientX / window.innerWidth) * 2 - 1);
+      pointerY.set((event.clientY / window.innerHeight) * 2 - 1);
+    }
 
     if (!spotActive || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
@@ -1105,7 +1105,7 @@ export default function FishProfileView({
     if (inside !== spotOpenRef.current) {
       spotOpenRef.current = inside;
       animate(spotRadius, inside ? MOTION_CFG.spotlight.radius : 0, {
-        duration: inside ? 0.55 : 0.45,
+        duration: inside ? 0.45 : 0.35,
         ease: EASE,
       });
     }
@@ -1115,7 +1115,7 @@ export default function FishProfileView({
     pointerX.set(0);
     pointerY.set(0);
     spotOpenRef.current = false;
-    animate(spotRadius, 0, { duration: 0.45, ease: EASE });
+    animate(spotRadius, 0, { duration: 0.35, ease: EASE });
   };
 
   const handleSaveProfile = async (patch) => {

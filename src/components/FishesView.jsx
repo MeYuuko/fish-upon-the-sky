@@ -105,14 +105,10 @@ export default function FishesView({
               clickFollowsLink={false}
             />
 
-            <motion.section
+            <section
               id="our-sky"
               className="our-sky-section"
               aria-labelledby="our-sky-heading"
-              initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.16 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="our-sky-photo-col">
                 <figure className="our-sky-photo-frame">
@@ -122,15 +118,11 @@ export default function FishesView({
                     loading="lazy"
                     decoding="async"
                   />
-                  <figcaption className="our-sky-caption">
-                    <span>FISH UPON THE SKY</span>
-                    <span>07 MEMBERS · ONE ARCHIVE</span>
-                  </figcaption>
                 </figure>
               </div>
 
               <div className="our-sky-copy-col">
-                <span className="eyebrow">OUR SKY · SHARED SPACE</span>
+                <span className="eyebrow">OUR SKY · 07 MEMBERS</span>
                 <h2 id="our-sky-heading">A little plan, a lot of sky.</h2>
                 <p className="our-sky-lead">
                   Fish Upon The Sky is our private corner for seven friends—built to settle weekend dates without
@@ -169,14 +161,14 @@ export default function FishesView({
 
                 <div className="our-sky-actions">
                   <button type="button" className="button button-primary" onClick={() => onNavigate?.('vault')}>
-                    Open Trip Vault →
+                    Open Trip Vault
                   </button>
                   <button type="button" className="button button-secondary" onClick={onNewPoll}>
-                    Plan next outing →
+                    Plan next outing
                   </button>
                 </div>
               </div>
-            </motion.section>
+            </section>
           </motion.div>
         )}
       </AnimatePresence>
