@@ -10,6 +10,7 @@ import {
   deleteRippleNote as apiDeleteRippleNote,
   loadAll,
   saveOuting as apiSaveOuting,
+  savePoll as apiSavePoll,
   saveProfile as apiSaveProfile,
   setBusyDay as apiSetBusyDay,
   setRippleReaction as apiSetRippleReaction,
@@ -446,6 +447,52 @@ export function useGroupData(client, currentMemberId, people) {
     [updateTrip],
   );
 
+  const finalizePoll = useCallback(
+    async (pollId) => {
+      const poll = stateRef.current.polls.find((p) => p.id === pollId);
+      if (!poll) return;
+
+      const countOptionVotes = (voteMap, key) =>
+        Object.values(voteMap ?? {}).filter((list) => list.includes(key)).length;
+
+      const sortedOptions = [...(poll.options ?? [])].sort(
+        (a, b) => countOptionVotes(poll.votes, b.id) - countOptionVotes(poll.votes, a.id),
+      );
+      const winningOption = sortedOptions[0] || null;
+
+      const sortedPlaces = [...(poll.placeOptions ?? [])].sort(
+        (a, b) => countOptionVotes(poll.placeVotes, b) - countOptionVotes(poll.placeVotes, a),
+      );
+      const winningPlace = sortedPlaces[0] || 'Confirmed together';
+
+      const closedPoll = { ...poll, closed: true, status: 'Closed' };
+      const nextPolls = stateRef.current.polls.map((p) => (p.id === pollId ? closedPoll : p));
+      setPolls(nextPolls);
+
+      if (!client) {
+        saveLocal('fish-local-polls', nextPolls);
+      } else {
+        try {
+          await apiSavePoll(client, closedPoll, currentMemberId);
+        } catch (err) {
+          setSyncError(err?.message || 'Không thể chốt kèo lên máy chủ.');
+          refresh({ silent: true });
+        }
+      }
+
+      const matchingOuting = stateRef.current.outings.find((o) => o.id === pollId);
+      if (matchingOuting) {
+        await updateTrip(pollId, (prev) => ({
+          ...prev,
+          date: winningOption?.label || prev.date,
+          place: winningPlace || prev.place,
+          status: 'Confirmed',
+        }));
+      }
+    },
+    [client, currentMemberId, refresh, updateTrip],
+  );
+
   const toggleBusy = useCallback(
     async (dayKey) => {
       const currentList = stateRef.current.busyDays[currentMemberId] ?? [];
@@ -707,6 +754,7 @@ export function useGroupData(client, currentMemberId, people) {
     updateMemberProfile,
     toggleVote,
     createPoll,
+    finalizePoll,
     updateTrip,
     addPastTrip,
     changeOutingStatus,

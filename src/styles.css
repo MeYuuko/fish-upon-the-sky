@@ -8437,3 +8437,468 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   Calendar 7-Member Heatmap, Outings Nudge/Finalize & Sky Replay
+   ========================================================= */
+
+.calendar-day {
+  position: relative;
+}
+.cal-free-count {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.calendar-day.is-golden {
+  border-color: rgba(241, 255, 98, 0.72) !important;
+  background: rgba(241, 255, 98, 0.18) !important;
+}
+.theme-dark .calendar-day.is-golden .cal-free-count {
+  color: var(--palette-citrus);
+  opacity: 1;
+}
+.calendar-day.is-mostly-free {
+  border-color: rgba(1, 146, 198, 0.55) !important;
+  background: rgba(1, 146, 198, 0.14) !important;
+}
+.calendar-day.is-inspected {
+  box-shadow: 0 0 0 2px var(--palette-sea);
+}
+.theme-dark .calendar-day.is-inspected {
+  box-shadow: 0 0 0 2px var(--palette-citrus);
+}
+
+.legend-golden {
+  background: var(--palette-citrus);
+  border: 1px solid rgba(17, 35, 88, 0.35);
+}
+.legend-mostly {
+  background: var(--palette-sea);
+}
+
+.cal-inspector,
+.cal-golden-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--color-line);
+  background: var(--surface-neutral-wash);
+}
+.cal-inspector-head,
+.cal-golden-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cal-golden-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.cal-inspector-badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-blue-wash);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.theme-dark .cal-inspector-badge {
+  color: var(--palette-cream);
+}
+.cal-inspector-badge.is-golden {
+  background: var(--palette-citrus);
+  color: var(--palette-deep);
+}
+.cal-inspector-chips,
+.cal-golden-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cal-member-chip {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.cal-member-chip.is-free {
+  background: rgba(1, 146, 198, 0.16);
+  color: var(--color-text);
+  border: 1px solid rgba(1, 146, 198, 0.32);
+}
+.cal-member-chip.is-busy {
+  background: rgba(166, 57, 45, 0.14);
+  color: var(--color-muted);
+  border: 1px solid rgba(166, 57, 45, 0.3);
+  text-decoration: line-through;
+}
+.cal-golden-chip {
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.theme-dark .cal-golden-chip {
+  border-color: rgba(241, 255, 98, 0.45);
+  color: var(--palette-citrus);
+}
+
+/* Outings Voter Avatars, Nudge & Time Slots */
+.vote-voters {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.vote-voter-dot,
+.vote-voter-more {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-paper);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--palette-deep);
+  background: var(--palette-cream);
+}
+.vote-voter-dot:first-child {
+  margin-left: 0;
+}
+.vote-voter-dot.avatar-lemon {
+  background: var(--palette-citrus);
+}
+.vote-voter-dot.avatar-blue {
+  background: #8fd7f4;
+}
+.vote-voter-more {
+  background: var(--palette-deep);
+  color: var(--palette-white);
+}
+
+.vote-nudge-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-line);
+  font-size: 0.82rem;
+}
+.vote-waiting-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-muted);
+}
+.vote-all-in {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.theme-dark .vote-all-in {
+  color: var(--palette-citrus);
+}
+.vote-finalize-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 0.82rem;
+}
+
+.poll-time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Sky Replay Editorial Modal */
+.sky-replay-modal {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-text);
+  box-shadow: 0 30px 90px rgba(4, 11, 32, 0.55);
+}
+.theme-dark .sky-replay-modal {
+  background: rgba(13, 28, 71, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.sky-replay-progress {
+  height: 3px;
+  width: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-line);
+  overflow: hidden;
+}
+.sky-replay-progress-bar {
+  height: 100%;
+  background: var(--palette-sea);
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.theme-dark .sky-replay-progress-bar {
+  background: var(--palette-citrus);
+}
+
+.sky-replay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sky-replay-head h2 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: var(--tracking-display);
+}
+
+.sky-replay-body {
+  min-height: 240px;
+}
+
+.sky-replay-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.sky-replay-stat {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+  background: var(--surface-neutral-wash);
+}
+.sky-replay-stat.is-hero {
+  grid-column: 1 / -1;
+  background: var(--surface-blue-wash);
+  border-color: var(--palette-sea);
+}
+.theme-dark .sky-replay-stat.is-hero {
+  background: rgba(241, 255, 98, 0.1);
+  border-color: rgba(241, 255, 98, 0.45);
+}
+.sky-replay-stat strong {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.theme-dark .sky-replay-stat.is-hero strong {
+  color: var(--palette-citrus);
+}
+.sky-replay-stat span {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+.sky-replay-crew {
+  display: grid;
+  gap: 18px;
+}
+.sky-replay-awards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.sky-replay-award {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+  background: var(--surface-neutral-wash);
+}
+.sky-replay-award strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: var(--tracking-display);
+}
+.sky-replay-award span:last-child {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.sky-replay-bars {
+  display: grid;
+  gap: 10px;
+}
+.sky-replay-bar-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 32px;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+.sky-replay-bar-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sky-replay-bar-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-line);
+  overflow: hidden;
+}
+.sky-replay-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--palette-sea);
+}
+.theme-dark .sky-replay-bar-fill {
+  background: var(--palette-citrus);
+}
+.sky-replay-bar-val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sky-replay-mosaic {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.sky-replay-tile {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-field);
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+}
+.sky-replay-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sky-replay-tile figcaption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 18px 8px 6px;
+  background: linear-gradient(to top, rgba(13, 28, 71, 0.9), transparent);
+  color: #F4F5FA;
+  display: grid;
+  gap: 1px;
+}
+.sky-replay-tile figcaption strong {
+  font-size: 0.68rem;
+  color: var(--palette-citrus);
+}
+.sky-replay-tile figcaption span {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sky-replay-vault-step {
+  display: grid;
+  gap: 18px;
+}
+.sky-replay-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.sky-replay-highlight-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+  background: var(--surface-neutral-wash);
+}
+.sky-replay-highlight-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.sky-replay-highlight-card span {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+.sky-replay-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sky-replay-empty {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.sky-replay-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line);
+}
+.sky-replay-dots {
+  display: inline-flex;
+  gap: 8px;
+}
+.sky-replay-dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-line);
+  cursor: pointer;
+}
+.sky-replay-dot.is-active {
+  background: var(--palette-sea);
+  transform: scale(1.25);
+}
+.theme-dark .sky-replay-dot.is-active {
+  background: var(--palette-citrus);
+}
+
+@media (max-width: 680px) {
+  .sky-replay-modal {
+    padding: 20px;
+  }
+  .sky-replay-awards,
+  .sky-replay-highlights,
+  .sky-replay-stats {
+    grid-template-columns: 1fr;
+  }
+  .sky-replay-mosaic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

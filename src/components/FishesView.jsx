@@ -11,6 +11,7 @@ export default function FishesView({
   onUpdateMember,
   onNewPoll,
   onNavigate,
+  onOpenReplay,
 }) {
   const reduceMotion = useReducedMotion();
   const [selectedMemberId, setSelectedMemberId] = useState(null);
@@ -166,6 +167,11 @@ export default function FishesView({
                   <button type="button" className="button button-secondary" onClick={onNewPoll}>
                     Plan next outing
                   </button>
+                  {onOpenReplay && (
+                    <button type="button" className="button button-secondary" onClick={onOpenReplay}>
+                      Sky Replay
+                    </button>
+                  )}
                 </div>
               </div>
             </section>

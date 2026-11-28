@@ -10,7 +10,8 @@ function normalizePoll(row, voteBuckets) {
   const data = row.data && typeof row.data === 'object' ? row.data : {};
   const today = todayKey();
   const deadlineDate = typeof data.deadlineDate === 'string' ? data.deadlineDate : '';
-  const status = deadlineDate && deadlineDate < today ? 'Closed' : 'Voting';
+  const closed = Boolean(data.closed) || Boolean(deadlineDate && deadlineDate < today);
+  const status = closed ? 'Closed' : 'Voting';
 
   return {
     id: row.id,
@@ -18,6 +19,7 @@ function normalizePoll(row, voteBuckets) {
     detail: data.detail || '',
     deadline: data.deadline || '',
     deadlineDate,
+    closed: Boolean(data.closed),
     options: Array.isArray(data.options) ? data.options : [],
     placeOptions: Array.isArray(data.placeOptions) ? data.placeOptions : [],
     budgetOptions: Array.isArray(data.budgetOptions) ? data.budgetOptions : [],
@@ -164,6 +166,19 @@ export async function createPoll(client, poll, outing, memberId) {
     });
     if (outingErr) throw outingErr;
   }
+}
+
+export async function savePoll(client, poll, memberId) {
+  const { id, votes: _v, placeVotes: _pv, budgetVotes: _bv, status: _s, ...pollData } = poll;
+  const { error } = await client.from('polls').upsert(
+    {
+      id,
+      data: { ...pollData, closed: Boolean(poll.closed) },
+      created_by: memberId,
+    },
+    { onConflict: 'id' },
+  );
+  if (error) throw error;
 }
 
 export async function setVote(client, { pollId, memberId, kind, option, selected }) {

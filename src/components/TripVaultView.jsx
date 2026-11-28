@@ -972,6 +972,7 @@ export default function TripVaultView({
   currentMemberName,
   onUpdateTrip,
   onAddPastTrip,
+  onOpenReplay,
 }) {
   const reduceMotion = useReducedMotion();
   const [filter, setFilter] = useState('all');
@@ -1026,14 +1027,26 @@ export default function TripVaultView({
             for the seven of you.
           </p>
         </div>
-        <button
-          type="button"
-          className="button button-primary"
-          onClick={() => setShowArchiveModal(true)}
-        >
-          <VaultIcon name="folderPlus" size={18} />
-          <span>Archive past trip</span>
-        </button>
+        <div className="ripples-head-actions">
+          {onOpenReplay && (
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={onOpenReplay}
+            >
+              <BrandIcon name="futs-slide" size={17} />
+              <span>Sky Replay</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => setShowArchiveModal(true)}
+          >
+            <VaultIcon name="folderPlus" size={18} />
+            <span>Archive past trip</span>
+          </button>
+        </div>
       </motion.div>
 
       <motion.div

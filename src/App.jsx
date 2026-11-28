@@ -27,6 +27,7 @@ import BeamWordmarkFooter from './components/BeamWordmarkFooter.jsx';
 import LiquidGlassTabBar from './components/LiquidGlassTabBar.jsx';
 import FishesView from './components/FishesView.jsx';
 import RipplesView, { DropRippleModal, LatestRippleWidget } from './components/RipplesView.jsx';
+import SkyReplayModal from './components/SkyReplayModal.jsx';
 import BrandIcon from './components/BrandIcon.jsx';
 import logoLight from '../Logo/Logo.svg';
 import logoDark from '../Logo/Logo white verse.svg';
@@ -105,10 +106,25 @@ function SectionHeading({ kicker, title, action, onAction }) {
   </div>;
 }
 
-function VoteCard({ poll, currentMemberId, onToggleVote }) {
+function VoteCard({ poll, members = people, currentMemberId, onToggleVote, onFinalizePoll }) {
+  const [copiedNudge, setCopiedNudge] = useState(false);
   const isClosed = poll.status === 'Closed';
   const memberVotes = poll.votes?.[currentMemberId] ?? [];
   const responded = Object.values(poll.votes ?? {}).filter((votes) => votes.length > 0).length;
+  const waitingMembers = members.filter((m) => (poll.votes?.[m.id]?.length ?? 0) === 0);
+
+  const handleCopyNudge = async () => {
+    const names = waitingMembers.map((m) => m.nickname || m.name).join(', ');
+    const text = `Nhắc nhẹ ${names} vào vote kèo "${poll.title}" trên Fish Upon The Sky trước ${poll.deadline} nhé!`;
+    try {
+      await navigator.clipboard?.writeText(text);
+      setCopiedNudge(true);
+      window.setTimeout(() => setCopiedNudge(false), 2000);
+    } catch {
+      // Ignore clipboard permission errors
+    }
+  };
+
   const renderIdeaGroup = (label, options, voteKey) => options?.length > 0 && <div className="vote-idea-group"><span className="vote-idea-label">{label}</span><div className="vote-chip-list">{options.map((option) => {
     const selected = (poll[voteKey]?.[currentMemberId] ?? []).includes(option);
     const count = Object.values(poll[voteKey] ?? {}).filter((votes) => votes.includes(option)).length;
@@ -123,22 +139,61 @@ function VoteCard({ poll, currentMemberId, onToggleVote }) {
     <p>{poll.detail}</p>
     <div className="vote-options" role="group" aria-label={`Vote for dates for ${poll.title}`}>
       {poll.options.map((option) => {
-        const voters = Object.values(poll.votes ?? {}).filter((votes) => votes.includes(option.id)).length;
+        const voterList = members.filter((m) => (poll.votes?.[m.id] ?? []).includes(option.id));
+        const voters = voterList.length;
         const selected = memberVotes.includes(option.id);
         return <button key={option.id} type="button" className={`vote-option${selected ? ' is-selected' : ''}`} aria-pressed={selected} disabled={isClosed} onClick={() => onToggleVote(poll.id, option.id, 'votes')}>
           <span className="vote-check"><Icon name="check" size={14} /></span>
           <span>{option.label}</span>
+          {voterList.length > 0 && (
+            <span className="vote-voters" title={voterList.map((m) => m.nickname || m.name).join(', ')}>
+              {voterList.slice(0, 4).map((m) => (
+                <i key={m.id} className={`vote-voter-dot avatar-${m.color}`}>{(m.nickname || m.name).slice(0, 1)}</i>
+              ))}
+              {voterList.length > 4 && <i className="vote-voter-more">+{voterList.length - 4}</i>}
+            </span>
+          )}
           <strong>{voters}</strong>
         </button>;
       })}
     </div>
     {renderIdeaGroup('Place ideas', poll.placeOptions, 'placeVotes')}
     {renderIdeaGroup('Budget ideas', poll.budgetOptions, 'budgetVotes')}
-    <div className="vote-foot"><span>{responded} of {people.length} members have responded</span><span>{isClosed ? 'Voting has closed' : 'Reminder before the deadline'}</span></div>
+    <div className="vote-foot">
+      <span>{responded} of {members.length} members have responded</span>
+      <span>{isClosed ? 'Voting has closed' : 'Reminder before the deadline'}</span>
+    </div>
+    {!isClosed && (waitingMembers.length > 0 || (responded > 0 && onFinalizePoll)) && (
+      <div className="vote-nudge-row">
+        {waitingMembers.length > 0 ? (
+          <div className="vote-waiting-group">
+            <span>Waiting on: {waitingMembers.map((m) => m.nickname || m.name).join(', ')}</span>
+            <button type="button" className="quiet-button" onClick={handleCopyNudge}>
+              {copiedNudge ? 'Copied ✓' : 'Copy nudge'}
+            </button>
+          </div>
+        ) : (
+          <span className="vote-all-in">All {members.length} fishes voted ✦</span>
+        )}
+        {responded > 0 && onFinalizePoll && (
+          <button type="button" className="button button-secondary vote-finalize-btn" onClick={() => onFinalizePoll(poll.id)}>
+            <Icon name="check" size={15} /> Finalize plan
+          </button>
+        )}
+      </div>
+    )}
   </article>;
 }
 
-function NewPollModal({ onClose, onCreate, reduceMotion }) {
+const POLL_TIME_SLOTS = [
+  '9:00 AM',
+  '12:00 PM',
+  '4:00 PM',
+  '7:00 PM',
+  'Overnight',
+];
+
+function NewPollModal({ initialDates = [], onClose, onCreate, reduceMotion }) {
   const today = todayKey();
   const now = new Date();
   const defaultDeadlineDate = (() => {
@@ -148,7 +203,8 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
 
   const [title, setTitle] = useState('');
   const [monthOffset, setMonthOffset] = useState(0);
-  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedDates, setSelectedDates] = useState(() => Array.from(new Set(initialDates.filter(Boolean))));
+  const [timeSlot, setTimeSlot] = useState('4:00 PM');
   const [deadlineDate, setDeadlineDate] = useState(defaultDeadlineDate);
   const [placeOptions, setPlaceOptions] = useState('');
   const [budgetOptions, setBudgetOptions] = useState('');
@@ -162,7 +218,7 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
   const choices = monthCells.filter(Boolean).map((day) => {
     const date = new Date(year, month, day);
     const id = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return { id, day, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · 4:00 PM` };
+    return { id, day, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${timeSlot}` };
   });
   const toggleDate = (id) => setSelectedDates((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
 
@@ -172,7 +228,7 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
     const selectedOptions = [...selectedDates].sort().map((id) => {
       const [selectedYear, selectedMonth, selectedDay] = id.split('-').map(Number);
       const date = new Date(selectedYear, selectedMonth - 1, selectedDay);
-      return { id, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · 4:00 PM` };
+      return { id, label: `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${timeSlot}` };
     });
     const [dlYear, dlMonth, dlDay] = deadlineDate.split('-').map(Number);
     const dlObj = new Date(dlYear, dlMonth - 1, dlDay);
@@ -210,7 +266,20 @@ function NewPollModal({ onClose, onCreate, reduceMotion }) {
           const isPast = option.id < today;
           return <button type="button" key={option.id} disabled={isPast} className={`poll-calendar-day${selected ? ' is-selected' : ''}`} aria-pressed={selected} aria-label={`${option.label}${selected ? ', selected' : ''}`} onClick={() => toggleDate(option.id)}><span>{day}</span>{selected && <i />}</button>;
         })}</div>
-        <div className="selected-date-note"><Icon name="clock" size={15} /><span>Selected dates are offered at 4:00 PM; you can choose more than one.</span></div>
+        <div className="poll-time-chips" role="group" aria-label="Preferred time slot">
+          {POLL_TIME_SLOTS.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              className={`vote-chip${timeSlot === slot ? ' is-selected' : ''}`}
+              aria-pressed={timeSlot === slot}
+              onClick={() => setTimeSlot(slot)}
+            >
+              {slot}
+            </button>
+          ))}
+        </div>
+        <div className="selected-date-note"><Icon name="clock" size={15} /><span>Selected dates are offered at {timeSlot}; you can choose more than one.</span></div>
       </div>
       <div className="modal-two-col">
         <label className="field-label">Place ideas <span className="field-hint">One per line</span><textarea className="text-input textarea" placeholder={'Old Quarter\nWest Lake\nLet the group pick'} value={placeOptions} onChange={(event) => setPlaceOptions(event.target.value)} rows="3" /></label>
@@ -228,6 +297,7 @@ function HomeView({
   ripples,
   onNewPoll,
   onVote,
+  onFinalizePoll,
   onToggleRippleReaction,
   onDropRipple,
   currentMemberId,
@@ -270,7 +340,13 @@ function HomeView({
               All outings <Icon name="arrow" size={17} />
             </button>
           </div>
-          <VoteCard poll={openPoll} currentMemberId={currentMemberId} onToggleVote={onVote} />
+          <VoteCard
+            poll={openPoll}
+            members={members}
+            currentMemberId={currentMemberId}
+            onToggleVote={onVote}
+            onFinalizePoll={onFinalizePoll}
+          />
         </section>
       )}
     </div>
@@ -278,7 +354,9 @@ function HomeView({
 }
 
 function CalendarView({
+  members = people,
   onNewPoll,
+  onStartPollWithDates,
   currentMemberId,
   currentMemberName,
   currentUserEmail,
@@ -290,7 +368,9 @@ function CalendarView({
   onAddBusyDays,
   polls,
 }) {
+  const today = todayKey();
   const [monthOffset, setMonthOffset] = useState(0);
+  const [inspectedDay, setInspectedDay] = useState(today);
   const [gcalEvents, setGcalEvents] = useState([]);
   const [gcalConnecting, setGcalConnecting] = useState(false);
   const [gcalSyncing, setGcalSyncing] = useState(false);
@@ -323,6 +403,36 @@ function CalendarView({
     acc[ev.dateKey].push(ev);
     return acc;
   }, {});
+
+  const getDayAvailability = (key) => {
+    const busyList = members.filter((m) => (busyDays[m.id] ?? []).includes(key));
+    const freeList = members.filter((m) => !(busyDays[m.id] ?? []).includes(key));
+    return { busyList, freeList, freeCount: freeList.length };
+  };
+
+  const inspectedAvailability = getDayAvailability(inspectedDay);
+  const inspectedDateLabel = (() => {
+    const [y, m, d] = inspectedDay.split('-').map(Number);
+    if (!y || !m || !d) return inspectedDay;
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  })();
+
+  const goldenDaysInMonth = dayCells
+    .filter(Boolean)
+    .map((day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)
+    .filter((key) => key >= today && getDayAvailability(key).freeCount === members.length)
+    .sort((a, b) => {
+      const da = new Date(`${a}T12:00:00`).getDay();
+      const db = new Date(`${b}T12:00:00`).getDay();
+      const aWeekend = da === 0 || da === 5 || da === 6 ? 0 : 1;
+      const bWeekend = db === 0 || db === 5 || db === 6 ? 0 : 1;
+      return aWeekend - bWeekend || a.localeCompare(b);
+    })
+    .slice(0, 4);
 
   const handleRevokedOrError = (err, fallback) => {
     if (err?.code === 'auth_revoked') {
@@ -465,22 +575,36 @@ function CalendarView({
           const hasIdea = ideaDates.has(dayKey);
           const dayGcal = eventsByDay[dayKey] ?? [];
           const hasGcal = dayGcal.length > 0;
+          const { busyList, freeCount } = getDayAvailability(dayKey);
+          const isGolden = dayKey >= today && freeCount === members.length;
+          const isMostlyFree = dayKey >= today && freeCount === members.length - 1;
+          const tooltipLines = [
+            `${freeCount}/${members.length} free`,
+            busyList.length > 0 ? `Busy: ${busyList.map((m) => m.nickname || m.name).join(', ')}` : 'Everyone free!',
+            ...dayGcal.map((e) => `GCal: ${e.startTime}: ${e.title}`),
+          ];
           return (
             <button
               key={dayKey}
-              className={`calendar-day${isBusy ? ' is-busy' : ''}${hasIdea ? ' has-idea' : ''}${hasGcal ? ' has-gcal' : ''}`}
-              aria-label={`${title} ${day}${isBusy ? ', marked busy' : ''}${hasGcal ? `, ${dayGcal.length} Google Calendar event` : ''}`}
-              title={hasGcal ? dayGcal.map((e) => `${e.startTime}: ${e.title}`).join('\n') : undefined}
+              className={`calendar-day${isBusy ? ' is-busy' : ''}${isGolden ? ' is-golden' : isMostlyFree ? ' is-mostly-free' : ''}${inspectedDay === dayKey ? ' is-inspected' : ''}${hasIdea ? ' has-idea' : ''}${hasGcal ? ' has-gcal' : ''}`}
+              aria-label={`${title} ${day}, ${freeCount} of ${members.length} free${isBusy ? ', marked busy by you' : ''}`}
+              title={tooltipLines.join('\n')}
               aria-pressed={isBusy}
-              onClick={() => onToggleBusy(dayKey)}
+              onClick={() => {
+                setInspectedDay(dayKey);
+                onToggleBusy(dayKey);
+              }}
             >
               <span>{day}</span>
+              <b className="cal-free-count" aria-hidden="true">{freeCount}/{members.length}</b>
               {hasGcal && <b className="gcal-day-dot" aria-hidden="true" />}
               {hasIdea && <i />}
             </button>
           );
         })}</div>
         <div className="calendar-legend">
+          <span><i className="legend-golden" /> 7/7 Golden day</span>
+          <span><i className="legend-mostly" /> 6/7 Free</span>
           <span><i className="legend-busy" /> Your busy day</span>
           <span><i className="legend-idea" /> Possible outing date</span>
           <span><i className="legend-gcal" /> Google Calendar</span>
@@ -490,6 +614,61 @@ function CalendarView({
         <span className="eyebrow">A quick check-in</span>
         <h2>Mark the days you can’t make.</h2>
         <p>Your availability stays linked to <strong>{currentMemberName}</strong>{currentUserEmail ? ` (${currentUserEmail})` : ''}.</p>
+
+        <div className="cal-inspector">
+          <div className="cal-inspector-head">
+            <strong>{inspectedDateLabel}</strong>
+            <span className={`cal-inspector-badge${inspectedAvailability.freeCount === members.length ? ' is-golden' : ''}`}>
+              {inspectedAvailability.freeCount}/{members.length} free
+            </span>
+          </div>
+          <div className="cal-inspector-chips">
+            {inspectedAvailability.freeList.map((m) => (
+              <span key={m.id} className="cal-member-chip is-free">{m.nickname || m.name}</span>
+            ))}
+            {inspectedAvailability.busyList.map((m) => (
+              <span key={m.id} className="cal-member-chip is-busy">{m.nickname || m.name} (busy)</span>
+            ))}
+          </div>
+        </div>
+
+        {goldenDaysInMonth.length > 0 && (
+          <div className="cal-golden-panel">
+            <div className="cal-golden-head">
+              <span className="eyebrow">Golden days · {goldenDaysInMonth.length} found</span>
+              <strong>Everyone is free</strong>
+            </div>
+            <div className="cal-golden-pills">
+              {goldenDaysInMonth.map((key) => {
+                const [y, m, d] = key.split('-').map(Number);
+                const label = new Date(y, m - 1, d).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                });
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className="cal-golden-chip"
+                    onClick={() => setInspectedDay(key)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {onStartPollWithDates && (
+              <button
+                type="button"
+                className="button button-primary gcal-btn"
+                onClick={() => onStartPollWithDates(goldenDaysInMonth)}
+              >
+                Start poll with Golden Days →
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="gcal-panel">
           <div className="gcal-panel-head">
@@ -573,12 +752,12 @@ function CalendarView({
   </section>;
 }
 
-function OutingsView({ polls, outings, onNewPoll, currentMemberId, onVote, goTo, onStatusChange }) {
+function OutingsView({ polls, outings, members = people, onNewPoll, currentMemberId, onVote, onFinalizePoll, goTo, onStatusChange }) {
   const openPolls = polls.filter((poll) => poll.status === 'Voting');
 
   return <section className="page-section">
     <div className="page-title-row"><div><span className="eyebrow">Plans &amp; votes</span><h1>Outings</h1><p>Track polls, confirmed dates, and trip archives in one place.</p></div><button className="button button-primary" onClick={onNewPoll}><Icon name="plus" size={18} /> New outing poll</button></div>
-    {openPolls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{openPolls.map((poll) => <VoteCard key={poll.id} poll={poll} currentMemberId={currentMemberId} onToggleVote={onVote} />)}</div></div>}
+    {openPolls.length > 0 && <div className="outings-polls"><SectionHeading kicker="Open decisions" title="Help choose what works" /><div className="poll-grid">{openPolls.map((poll) => <VoteCard key={poll.id} poll={poll} members={members} currentMemberId={currentMemberId} onToggleVote={onVote} onFinalizePoll={onFinalizePoll} />)}</div></div>}
     <SectionHeading kicker="The group’s story" title="Every plan has a place" />
     {outings.length === 0 ? (
       <div className="soft-callout">
@@ -625,8 +804,15 @@ export function PlannerApp({
     }
   }, [theme]);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [pollInitialDates, setPollInitialDates] = useState([]);
   const [showRippleModal, setShowRippleModal] = useState(false);
+  const [showReplayModal, setShowReplayModal] = useState(false);
   const didMountTabRef = useRef(false);
+
+  const openPollWithDates = (dates = []) => {
+    setPollInitialDates(Array.isArray(dates) ? dates : []);
+    setShowPollModal(true);
+  };
 
   const {
     members,
@@ -640,6 +826,7 @@ export function PlannerApp({
     updateMemberProfile,
     toggleVote,
     createPoll,
+    finalizePoll,
     updateTrip,
     addPastTrip,
     changeOutingStatus,
@@ -797,8 +984,9 @@ export function PlannerApp({
                 outings={outings}
                 members={members}
                 ripples={ripples}
-                onNewPoll={() => setShowPollModal(true)}
+                onNewPoll={() => openPollWithDates([])}
                 onVote={toggleVote}
+                onFinalizePoll={finalizePoll}
                 onToggleRippleReaction={toggleRippleReaction}
                 onDropRipple={() => setShowRippleModal(true)}
                 currentMemberId={currentMemberId}
@@ -808,7 +996,9 @@ export function PlannerApp({
             )}
             {activeTab === 'calendar' && (
               <CalendarView
-                onNewPoll={() => setShowPollModal(true)}
+                members={members}
+                onNewPoll={() => openPollWithDates([])}
+                onStartPollWithDates={openPollWithDates}
                 currentMemberId={currentMemberId}
                 currentMemberName={displayName}
                 currentUserEmail={currentUserEmail}
@@ -825,9 +1015,11 @@ export function PlannerApp({
               <OutingsView
                 polls={polls}
                 outings={outings}
-                onNewPoll={() => setShowPollModal(true)}
+                members={members}
+                onNewPoll={() => openPollWithDates([])}
                 currentMemberId={currentMemberId}
                 onVote={toggleVote}
+                onFinalizePoll={finalizePoll}
                 goTo={navigateToTab}
                 onStatusChange={changeOutingStatus}
               />
@@ -855,6 +1047,7 @@ export function PlannerApp({
                 currentMemberName={displayName}
                 onUpdateTrip={updateTrip}
                 onAddPastTrip={addPastTrip}
+                onOpenReplay={() => setShowReplayModal(true)}
               />
             )}
             {activeTab === 'members' && (
@@ -863,8 +1056,9 @@ export function PlannerApp({
                 outings={outings}
                 currentMemberId={currentMemberId}
                 onUpdateMember={updateMemberProfile}
-                onNewPoll={() => setShowPollModal(true)}
+                onNewPoll={() => openPollWithDates([])}
                 onNavigate={navigateToTab}
+                onOpenReplay={() => setShowReplayModal(true)}
               />
             )}
           </motion.div>
@@ -886,7 +1080,32 @@ export function PlannerApp({
         ariaLabel="Mobile navigation"
       />
     </nav>
-    <AnimatePresence>{showPollModal && <NewPollModal onClose={() => setShowPollModal(false)} onCreate={handleCreatePoll} reduceMotion={reduceMotion} />}</AnimatePresence>
+    <AnimatePresence>
+      {showPollModal && (
+        <NewPollModal
+          initialDates={pollInitialDates}
+          onClose={() => {
+            setShowPollModal(false);
+            setPollInitialDates([]);
+          }}
+          onCreate={handleCreatePoll}
+          reduceMotion={reduceMotion}
+        />
+      )}
+    </AnimatePresence>
+    <AnimatePresence>
+      {showReplayModal && (
+        <SkyReplayModal
+          ripples={ripples}
+          outings={outings}
+          polls={polls}
+          members={members}
+          onClose={() => setShowReplayModal(false)}
+          onNavigate={navigateToTab}
+          reduceMotion={reduceMotion}
+        />
+      )}
+    </AnimatePresence>
     <AnimatePresence>
       {showRippleModal && (
         <DropRippleModal
