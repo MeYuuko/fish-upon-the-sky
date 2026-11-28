@@ -30,6 +30,24 @@ export function isIosBrowserNotInstalled() {
   return isIos && !isStandalone;
 }
 
+async function getSwRegistration() {
+  return (
+    (await navigator.serviceWorker.getRegistration('/')) ||
+    (await navigator.serviceWorker.getRegistration())
+  );
+}
+
+function keysEqual(a, b) {
+  if (!a || !b) return false;
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+  if (viewA.length !== viewB.length) return false;
+  for (let i = 0; i < viewA.length; i += 1) {
+    if (viewA[i] !== viewB[i]) return false;
+  }
+  return true;
+}
+
 export async function getPushStatus() {
   if (isIosBrowserNotInstalled()) {
     return { supported: false, reason: 'ios-install', subscribed: false, permission: 'default' };
@@ -39,7 +57,7 @@ export async function getPushStatus() {
   }
   const permission = Notification.permission;
   try {
-    const registration = await navigator.serviceWorker.getRegistration('/sw.js');
+    const registration = await getSwRegistration();
     if (!registration) {
       return { supported: true, subscribed: false, permission };
     }
@@ -73,14 +91,23 @@ export async function subscribeDevicePush(client, memberId) {
       return { ok: false, reason: 'denied', message: 'Notification permission was blocked in browser settings.' };
     }
 
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     await navigator.serviceWorker.ready;
 
+    const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
     let subscription = await registration.pushManager.getSubscription();
+    if (
+      subscription &&
+      subscription.options?.applicationServerKey &&
+      !keysEqual(subscription.options.applicationServerKey, appServerKey)
+    ) {
+      await subscription.unsubscribe().catch(() => {});
+      subscription = null;
+    }
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: appServerKey,
       });
     }
 
@@ -121,7 +148,7 @@ export async function subscribeDevicePush(client, memberId) {
 export async function unsubscribeDevicePush(client) {
   if (!isPushSupported()) return { ok: true, subscribed: false };
   try {
-    const registration = await navigator.serviceWorker.getRegistration('/sw.js');
+    const registration = await getSwRegistration();
     const sub = await registration?.pushManager.getSubscription();
     if (sub) {
       const endpoint = sub.endpoint;
@@ -148,5 +175,10 @@ export function sendGroupPush(client, payload) {
         targetMemberIds: Array.isArray(payload.targetMemberIds) ? payload.targetMemberIds : undefined,
       },
     })
-    .catch(() => {});
+    .then(({ error }) => {
+      if (error) console.warn('[FISH push]', error.message || error);
+    })
+    .catch((err) => {
+      console.warn('[FISH push]', err?.message || err);
+    });
 }

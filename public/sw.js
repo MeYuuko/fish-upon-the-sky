@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-sky-v3';
+const CACHE_NAME = 'fish-sky-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
 
   const isStaticAsset =
     url.pathname.startsWith('/assets/') ||
-    /\.(svg|png|jpg|jpeg|webp|woff2?|ttf|otf|webmanifest|css|js)$/i.test(url.pathname);
+    /\.(svg|png|jpg|jpeg|webp|woff2?|ttf|otf|css|js)$/i.test(url.pathname);
 
   if (!isStaticAsset) return;
 
