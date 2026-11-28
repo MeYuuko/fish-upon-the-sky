@@ -270,3 +270,37 @@ drop policy if exists "members_delete_media" on storage.objects;
 create policy "members_delete_media" on storage.objects
   for delete to authenticated
   using (bucket_id = 'media' and public.current_member_id() is not null);
+
+-- Web Push Subscriptions cho PWA (Android & iOS)
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  member_id text not null check (member_id in ('bao', 'hang', 'diem', 'quynh', 'quoc-anh', 'thu', 'thien')),
+  p256dh text not null,
+  auth text not null,
+  user_agent text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.push_subscriptions enable row level security;
+
+drop policy if exists "owner_select_push_subscriptions" on public.push_subscriptions;
+create policy "owner_select_push_subscriptions" on public.push_subscriptions
+  for select to authenticated
+  using (member_id = public.current_member_id());
+
+drop policy if exists "owner_insert_push_subscriptions" on public.push_subscriptions;
+create policy "owner_insert_push_subscriptions" on public.push_subscriptions
+  for insert to authenticated
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_update_push_subscriptions" on public.push_subscriptions;
+create policy "owner_update_push_subscriptions" on public.push_subscriptions
+  for update to authenticated
+  using (member_id = public.current_member_id())
+  with check (member_id = public.current_member_id());
+
+drop policy if exists "owner_delete_push_subscriptions" on public.push_subscriptions;
+create policy "owner_delete_push_subscriptions" on public.push_subscriptions
+  for delete to authenticated
+  using (member_id = public.current_member_id());

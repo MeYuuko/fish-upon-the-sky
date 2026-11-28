@@ -19,6 +19,11 @@ import {
 } from './auth/google-auth.js';
 import { fetchCurrentMemberId, getGoogleSupabase } from './data/supabaseClient.js';
 import { todayKey } from './data/groupApi.js';
+import {
+  getPushStatus,
+  subscribeDevicePush,
+  unsubscribeDevicePush,
+} from './data/pushNotifications.js';
 import { useGroupData } from './data/useGroupData.js';
 import WelcomeReveal from './components/GlassLogoReveal.jsx';
 import MyTasksHero from './components/MyTasksHero.jsx';
@@ -92,6 +97,7 @@ function Icon({ name, size = 20, strokeWidth = 1.8 }) {
     heart: <path d="M20 8.5c0 5-8 10-8 10s-8-5-8-10a4 4 0 0 1 8-1 4 4 0 0 1 8 1Z" />,
     moon: <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />,
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></>,
+    bell: <><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5" /><path d="M10 19a2 2 0 0 0 4 0" /></>,
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" {...common}>{paths[name]}</svg>;
 }
@@ -826,7 +832,51 @@ export function PlannerApp({
   const [pollInitialDates, setPollInitialDates] = useState([]);
   const [showRippleModal, setShowRippleModal] = useState(false);
   const [showReplayModal, setShowReplayModal] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushToast, setPushToast] = useState('');
   const didMountTabRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    getPushStatus().then((status) => {
+      if (active) setPushSubscribed(Boolean(status.subscribed));
+    });
+    return () => {
+      active = false;
+    };
+  }, [currentMemberId]);
+
+  const showPushNotice = (msg) => {
+    setPushToast(msg);
+    window.setTimeout(() => {
+      setPushToast((cur) => (cur === msg ? '' : cur));
+    }, 4200);
+  };
+
+  const handleTogglePush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (pushSubscribed) {
+        await unsubscribeDevicePush(client);
+        setPushSubscribed(false);
+        showPushNotice('Notifications paused on this device.');
+      } else {
+        const res = await subscribeDevicePush(client, currentMemberId);
+        if (res.ok) {
+          setPushSubscribed(true);
+          showPushNotice('Notifications enabled for FISH.');
+        } else {
+          showPushNotice(res.message || 'Could not enable notifications.');
+        }
+      }
+    } catch (err) {
+      showPushNotice(err?.message || 'Could not update notification settings.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const openPollWithDates = (dates = []) => {
     setPollInitialDates(Array.isArray(dates) ? dates : []);
@@ -933,6 +983,18 @@ export function PlannerApp({
         <div className="header-actions">
           <button
             type="button"
+            className={`icon-button push-toggle-btn${pushSubscribed ? ' is-subscribed' : ''}`}
+            disabled={pushBusy}
+            aria-label={pushSubscribed ? 'Disable push notifications' : 'Enable push notifications'}
+            title={pushSubscribed ? 'Notifications on' : 'Enable notifications'}
+            onClick={handleTogglePush}
+          >
+            <Icon name="bell" size={18} />
+            {pushSubscribed && <i className="push-dot" aria-hidden="true" />}
+          </button>
+
+          <button
+            type="button"
             className="icon-button theme-toggle"
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
@@ -974,6 +1036,11 @@ export function PlannerApp({
     </header>
 
     {passwordResetNotice && <p className="planner-reset-notice">{passwordResetNotice}</p>}
+    {pushToast && (
+      <p className="push-toast" role="status">
+        {pushToast}
+      </p>
+    )}
     {loading && <p className="planner-reset-notice" role="status">Syncing group data…</p>}
     {syncError && (
       <p

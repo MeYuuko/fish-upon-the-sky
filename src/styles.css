@@ -9317,3 +9317,51 @@ textarea {
     max-height: 92dvh;
   }
 }
+
+/* Web Push Bell Toggle & Toast */
+.push-toggle-btn {
+  display: none;
+  position: relative;
+}
+@media (pointer: coarse), (display-mode: standalone) {
+  .push-toggle-btn {
+    display: inline-flex;
+  }
+}
+.push-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--palette-sea);
+  box-shadow: 0 0 0 2px var(--color-page);
+}
+.theme-dark .push-dot {
+  background: var(--palette-citrus);
+}
+
+.push-toast {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 65;
+  margin: 0;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--palette-sea);
+  background: var(--color-paper);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  box-shadow: 0 14px 36px rgba(17, 35, 88, 0.22);
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.theme-dark .push-toast {
+  background: rgba(13, 28, 71, 0.94);
+  border-color: var(--palette-citrus);
+  color: var(--palette-white);
+}

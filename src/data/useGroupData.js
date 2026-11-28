@@ -18,6 +18,7 @@ import {
   subscribeGroup,
 } from './groupApi.js';
 import { uploadImage } from './images.js';
+import { sendGroupPush } from './pushNotifications.js';
 
 const SAMPLE_POLLS = [
   {
@@ -372,6 +373,13 @@ export function useGroupData(client, currentMemberId, people) {
 
       try {
         await apiCreatePoll(client, poll, newOuting, currentMemberId);
+        const creator = stateRef.current.members.find((m) => m.id === currentMemberId);
+        sendGroupPush(client, {
+          title: 'FISH · New outing poll',
+          body: `${creator?.nickname || creator?.name || 'A fish'} started "${poll.title}"`,
+          url: '/?tab=outings',
+          tag: `poll-${poll.id}`,
+        });
       } catch (err) {
         setSyncError(err?.message || 'Không thể tạo bình chọn mới. Đang tải lại...');
         refresh({ silent: true });
@@ -474,6 +482,12 @@ export function useGroupData(client, currentMemberId, people) {
       } else {
         try {
           await apiSavePoll(client, closedPoll, currentMemberId);
+          sendGroupPush(client, {
+            title: 'FISH · Plan confirmed',
+            body: `${poll.title} → ${winningOption?.label || 'Date locked'} · ${winningPlace}`,
+            url: '/?tab=outings',
+            tag: `confirm-${pollId}`,
+          });
         } catch (err) {
           setSyncError(err?.message || 'Không thể chốt kèo lên máy chủ.');
           refresh({ silent: true });
@@ -602,6 +616,14 @@ export function useGroupData(client, currentMemberId, people) {
           saveLocal('fish-local-ripples', nextRipples);
         } else {
           await apiCreateRipple(client, newRipple);
+          const sender = stateRef.current.members.find((m) => m.id === currentMemberId);
+          const senderName = sender?.nickname || sender?.name || 'A fish';
+          sendGroupPush(client, {
+            title: `FISH · ${senderName} dropped a ripple`,
+            body: newRipple.caption || newRipple.place || 'Open Ripples to see the frame.',
+            url: '/?tab=ripples',
+            tag: `ripple-${newRipple.id}`,
+          });
         }
 
         if (tripId) {
@@ -706,6 +728,17 @@ export function useGroupData(client, currentMemberId, people) {
 
       try {
         await apiAddRippleNote(client, note);
+        const targetRipple = stateRef.current.ripples.find((r) => r.id === rippleId);
+        if (targetRipple && targetRipple.memberId !== currentMemberId) {
+          const author = stateRef.current.members.find((m) => m.id === currentMemberId);
+          sendGroupPush(client, {
+            title: `FISH · Float note from ${author?.nickname || author?.name || 'a fish'}`,
+            body: trimmed,
+            url: '/?tab=ripples',
+            tag: `note-${rippleId}`,
+            targetMemberIds: [targetRipple.memberId],
+          });
+        }
       } catch (err) {
         setSyncError(err?.message || 'Không thể gửi ghi chú.');
         refresh({ silent: true });
